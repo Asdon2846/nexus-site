@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus — Auth</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #070810;
+  --bg2: #0e0f1a;
+  --bg3: #15172a;
+  --border: rgba(255,255,255,0.07);
+  --accent: #00e5ff;
+  --accent2: #ff3d71;
+  --green: #00ff9d;
+  --white: #f0f2ff;
+  --muted: #555878;
+  --fd: 'Bebas Neue', sans-serif;
+  --fb: 'Outfit', sans-serif;
+}
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: var(--fb);
+  background: var(--bg);
+  color: var(--white);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  cursor: none;
+}
+
+/* CURSOR */
+#cursor { width:10px; height:10px; background:var(--white); border-radius:50%; position:fixed; pointer-events:none; z-index:9999; transform:translate(-50%,-50%); will-change:transform; mix-blend-mode:difference; transition:width .2s,height .2s; }
+#cursor-ring { width:36px; height:36px; border:1px solid rgba(255,255,255,0.3); border-radius:50%; position:fixed; pointer-events:none; z-index:9998; transform:translate(-50%,-50%); will-change:transform; transition:width .25s,height .25s; }
+
+/* BACKGROUND */
+.bg-grid {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background-image: linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px);
+  background-size: 50px 50px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black, transparent);
+}
+.orb { position:fixed; border-radius:50%; filter:blur(100px); pointer-events:none; animation:float 10s ease-in-out infinite; }
+.orb1 { width:500px; height:500px; background:rgba(0,229,255,.05); top:-100px; left:-150px; }
+.orb2 { width:400px; height:400px; background:rgba(255,61,113,.05); bottom:-100px; right:-100px; animation-delay:-4s; }
+@keyframes float { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-25px);} }
+
+/* NAV */
+nav {
+  position: relative; z-index: 10;
+  height: 62px; display:flex; align-items:center; padding:0 40px;
+  background: rgba(7,8,16,.6); backdrop-filter:blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-logo { font-family:var(--fd); font-size:28px; letter-spacing:4px; background:linear-gradient(90deg,var(--accent),var(--green)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-right:auto; cursor:pointer; }
+.nav-link { color:var(--muted); font-size:13px; font-weight:500; padding:7px 14px; border-radius:8px; cursor:pointer; transition:color .2s,background .2s; text-decoration:none; border:none; background:none; font-family:var(--fb); }
+.nav-link:hover { color:var(--white); background:rgba(255,255,255,.05); }
+
+/* MAIN LAYOUT */
+main {
+  position: relative; z-index: 1;
+  flex: 1; display:flex; align-items:center; justify-content:center;
+  padding: 40px 20px;
+}
+
+/* CARD AUTH */
+.auth-card {
+  width: 100%; max-width: 440px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 40px;
+  box-shadow: 0 40px 100px rgba(0,0,0,.5);
+  animation: cardIn .5s cubic-bezier(.34,1.3,.64,1) both;
+  position: relative;
+  overflow: hidden;
+}
+.auth-card::before {
+  content: '';
+  position: absolute; top:0; left:0; right:0; height:1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: .6;
+}
+@keyframes cardIn { from{opacity:0;transform:translateY(30px);} to{opacity:1;transform:translateY(0);} }
+
+/* TABS */
+.auth-tabs {
+  display: flex; gap:4px;
+  background: var(--bg3); border-radius:12px; padding:4px;
+  margin-bottom: 32px;
+}
+.auth-tab {
+  flex:1; padding:10px; text-align:center;
+  border-radius:9px; font-size:14px; font-weight:600;
+  cursor:pointer; border:none; font-family:var(--fb);
+  color:var(--muted); background:none;
+  transition: all .25s cubic-bezier(.34,1.3,.64,1);
+}
+.auth-tab.active { background:var(--white); color:#070810; box-shadow:0 4px 16px rgba(0,0,0,.3); }
+
+/* FORM TITLE */
+.form-title { font-family:var(--fd); font-size:42px; letter-spacing:3px; line-height:1; margin-bottom:6px; }
+.form-sub { font-size:13px; color:var(--muted); margin-bottom:28px; font-weight:300; }
+
+/* FIELDS */
+.field { margin-bottom:16px; }
+.field-label { display:block; font-size:11px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-bottom:7px; }
+.field-wrap { position:relative; }
+.field-icon { position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:16px; pointer-events:none; }
+.field-input {
+  width:100%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 13px 14px 13px 42px;
+  color: var(--white); font-family:var(--fb); font-size:14px;
+  outline:none; transition: border-color .2s, box-shadow .2s;
+}
+.field-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(0,229,255,.08); }
+.field-input.error { border-color:var(--accent2); box-shadow:0 0 0 3px rgba(255,61,113,.08); }
+.field-input::placeholder { color:var(--muted); }
+
+/* PASSWORD TOGGLE */
+.toggle-pass {
+  position:absolute; right:14px; top:50%; transform:translateY(-50%);
+  background:none; border:none; color:var(--muted); cursor:pointer; font-size:16px;
+  transition:color .2s; padding:4px;
+}
+.toggle-pass:hover { color:var(--white); }
+
+/* STRENGTH BAR */
+.strength-wrap { margin-top:8px; }
+.strength-bars { display:flex; gap:4px; margin-bottom:4px; }
+.strength-bar { flex:1; height:3px; border-radius:2px; background:var(--bg3); transition:background .3s; }
+.strength-label { font-size:11px; color:var(--muted); }
+
+/* ERROR MSG */
+.field-error { font-size:11px; color:var(--accent2); margin-top:5px; display:none; }
+.field-error.show { display:block; }
+
+/* ALERT */
+.alert {
+  padding:12px 16px; border-radius:10px; font-size:13px; margin-bottom:20px;
+  display:none; align-items:center; gap:10px;
+}
+.alert.show { display:flex; }
+.alert-error { background:rgba(255,61,113,.1); border:1px solid rgba(255,61,113,.25); color:var(--accent2); }
+.alert-success { background:rgba(0,255,157,.08); border:1px solid rgba(0,255,157,.2); color:var(--green); }
+
+/* SUBMIT BTN */
+.submit-btn {
+  width:100%; padding:15px; border-radius:12px;
+  font-family:var(--fb); font-size:15px; font-weight:700;
+  cursor:pointer; border:none; margin-top:8px;
+  transition: all .25s cubic-bezier(.34,1.3,.64,1);
+  position:relative; overflow:hidden;
+}
+.submit-btn::after {
+  content:''; position:absolute; inset:0;
+  background:rgba(255,255,255,.12); opacity:0; transition:opacity .2s;
+}
+.submit-btn:hover::after { opacity:1; }
+.submit-btn:hover { transform:translateY(-2px); box-shadow:0 12px 40px rgba(0,0,0,.4); }
+.submit-btn:active { transform:translateY(0); }
+.submit-btn.loading { pointer-events:none; opacity:.7; }
+.btn-login-style { background:var(--accent); color:#070810; }
+.btn-signup-style { background:linear-gradient(135deg,var(--green),var(--accent)); color:#070810; }
+
+/* SPINNER */
+.spinner { display:none; width:18px; height:18px; border:2px solid rgba(0,0,0,.3); border-top-color:#070810; border-radius:50%; animation:spin .6s linear infinite; margin:0 auto; }
+.spinner.show { display:block; }
+.btn-text { transition:opacity .2s; }
+@keyframes spin { to{transform:rotate(360deg);} }
+
+/* DIVIDER */
+.divider { display:flex; align-items:center; gap:12px; margin:20px 0; color:var(--muted); font-size:12px; }
+.divider::before,.divider::after { content:''; flex:1; height:1px; background:var(--border); }
+
+/* SOCIAL BTNS */
+.social-btn {
+  width:100%; padding:12px; border-radius:12px; font-family:var(--fb); font-size:13px; font-weight:600;
+  cursor:pointer; border:1px solid var(--border); background:var(--bg3); color:var(--white);
+  display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:10px;
+  transition:all .2s;
+}
+.social-btn:hover { background:var(--bg3); border-color:rgba(255,255,255,.15); transform:translateY(-1px); }
+
+/* FOOTER LINK */
+.form-footer { text-align:center; font-size:13px; color:var(--muted); margin-top:20px; }
+.form-footer a { color:var(--accent); font-weight:600; cursor:pointer; text-decoration:none; }
+.form-footer a:hover { text-decoration:underline; }
+
+/* DASHBOARD */
+#dashboard {
+  display:none; position:fixed; inset:0; z-index:100;
+  background:var(--bg); flex-direction:column;
+}
+#dashboard.open { display:flex; }
+
+.dash-nav {
+  height:62px; display:flex; align-items:center; padding:0 40px; gap:16px;
+  background:rgba(7,8,16,.8); backdrop-filter:blur(20px); border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.dash-nav .nav-logo { font-size:24px; }
+.dash-body { flex:1; overflow-y:auto; padding:60px 40px; max-width:800px; margin:0 auto; width:100%; }
+
+.welcome-title { font-family:var(--fd); font-size:clamp(40px,7vw,80px); letter-spacing:4px; line-height:1; margin-bottom:12px; }
+.welcome-sub { color:var(--muted); font-size:15px; font-weight:300; margin-bottom:48px; }
+
+.user-card {
+  background:var(--bg2); border:1px solid var(--border); border-radius:20px;
+  padding:28px; display:flex; align-items:center; gap:24px; margin-bottom:24px;
+  position:relative; overflow:hidden;
+}
+.user-card::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,var(--green),transparent); opacity:.5; }
+.user-av {
+  width:64px; height:64px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-weight:700; font-size:24px; flex-shrink:0;
+}
+.user-pseudo { font-family:var(--fd); font-size:28px; letter-spacing:2px; margin-bottom:4px; }
+.user-email { font-size:13px; color:var(--muted); }
+.user-badge {
+  margin-left:auto; padding:6px 16px; border-radius:20px;
+  font-size:11px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase;
+}
+
+.stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:24px; }
+.stat-box { background:var(--bg2); border:1px solid var(--border); border-radius:14px; padding:20px; text-align:center; }
+.stat-val { font-family:var(--fd); font-size:36px; line-height:1; margin-bottom:4px; }
+.stat-lbl { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+
+.actions-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:24px; }
+.action-card {
+  background:var(--bg2); border:1px solid var(--border); border-radius:14px;
+  padding:20px; cursor:pointer; transition:all .2s; display:flex; align-items:center; gap:14px;
+}
+.action-card:hover { background:var(--bg3); transform:translateY(-2px); }
+.action-icon { font-size:28px; }
+.action-title { font-weight:600; font-size:14px; margin-bottom:2px; }
+.action-desc { font-size:12px; color:var(--muted); }
+
+.danger-zone { background:rgba(255,61,113,.05); border:1px solid rgba(255,61,113,.15); border-radius:14px; padding:20px; }
+.danger-title { font-size:13px; font-weight:700; color:var(--accent2); margin-bottom:12px; text-transform:uppercase; letter-spacing:1px; }
+.danger-btn { padding:10px 20px; border-radius:10px; background:rgba(255,61,113,.1); color:var(--accent2); border:1px solid rgba(255,61,113,.2); font-family:var(--fb); font-size:13px; font-weight:600; cursor:pointer; transition:all .2s; }
+.danger-btn:hover { background:rgba(255,61,113,.2); }
+
+/* TOAST */
+#toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--bg3); border:1px solid var(--accent); color:var(--white); padding:10px 24px; border-radius:30px; font-size:13px; font-weight:500; z-index:9000; transition:transform .3s cubic-bezier(.34,1.56,.64,1); white-space:nowrap; box-shadow:0 0 24px rgba(0,229,255,.15); pointer-events:none; }
+#toast.show { transform:translateX(-50%) translateY(0); }
+
+/* FORGOT PASSWORD */
+.forgot-link { font-size:12px; color:var(--muted); cursor:pointer; float:right; margin-top:6px; transition:color .2s; }
+.forgot-link:hover { color:var(--accent); }
+
+/* CHECKBOX */
+.checkbox-wrap { display:flex; align-items:center; gap:10px; margin:16px 0; cursor:pointer; }
+.checkbox-wrap input { display:none; }
+.checkbox-box { width:18px; height:18px; border:1px solid var(--border); border-radius:5px; background:var(--bg3); display:flex; align-items:center; justify-content:center; transition:all .2s; flex-shrink:0; font-size:11px; }
+.checkbox-wrap input:checked + .checkbox-box { background:var(--accent); border-color:var(--accent); color:#070810; }
+.checkbox-label { font-size:13px; color:var(--muted); }
+.checkbox-label a { color:var(--accent); }
+
+@media(max-width:500px){
+  .auth-card { padding:28px 20px; }
+  .stats-grid { grid-template-columns:1fr 1fr; }
+  .actions-grid { grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+<div class="bg-grid"></div>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo" onclick="goHome()">NEXUS</div>
+  <button class="nav-link" onclick="goHome()">← Accueil</button>
+</nav>
+
+<!-- MAIN -->
+<main>
+  <div class="auth-card" id="auth-card">
+
+    <!-- TABS -->
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">Connexion</button>
+      <button class="auth-tab" id="tab-signup" onclick="switchTab('signup')">Inscription</button>
+    </div>
+
+    <!-- ALERT GLOBALE -->
+    <div class="alert alert-error" id="alert-error">
+      <span>⚠️</span><span id="alert-error-msg"></span>
+    </div>
+    <div class="alert alert-success" id="alert-success">
+      <span>✅</span><span id="alert-success-msg"></span>
+    </div>
+
+    <!-- ── FORM LOGIN ── -->
+    <div id="form-login">
+      <div class="form-title">BON<br>RETOUR</div>
+      <p class="form-sub">Content de te revoir sur Nexus.</p>
+
+      <div class="field">
+        <label class="field-label">Email</label>
+        <div class="field-wrap">
+          <span class="field-icon">✉️</span>
+          <input class="field-input" id="li-email" type="email" placeholder="ton@email.com" oninput="clearErrors()">
+        </div>
+        <div class="field-error" id="li-email-err">Email invalide.</div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Mot de passe</label>
+        <div class="field-wrap">
+          <span class="field-icon">🔒</span>
+          <input class="field-input" id="li-pass" type="password" placeholder="••••••••" oninput="clearErrors()" onkeydown="if(event.key==='Enter')doLogin()">
+          <button class="toggle-pass" onclick="toggleVis('li-pass',this)" tabindex="-1">👁</button>
+        </div>
+        <span class="forgot-link" onclick="showForgot()">Mot de passe oublié ?</span>
+      </div>
+
+      <label class="checkbox-wrap">
+        <input type="checkbox" id="remember-me">
+        <div class="checkbox-box">✓</div>
+        <span class="checkbox-label">Se souvenir de moi</span>
+      </label>
+
+      <button class="submit-btn btn-login-style" id="btn-login" onclick="doLogin()">
+        <span class="btn-text">Se connecter →</span>
+        <div class="spinner" id="spin-login"></div>
+      </button>
+
+      <p class="form-footer">Pas de compte ? <a onclick="switchTab('signup')">S'inscrire gratuitement</a></p>
+      <div style="margin-top:14px;padding:12px 14px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.05);border-radius:10px;font-size:11px;color:var(--muted);line-height:1.8;">
+        <div style="font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;color:var(--muted2);">Comptes de test</div>
+        <div>👑 Admin — <span style="color:var(--accent);">admin@nexus.io</span> / <span style="color:var(--accent);">Admin@2025</span></div>
+        <div>👤 Démo — <span style="color:var(--muted2);">demo@nexus.io</span> / <span style="color:var(--muted2);">nexus123</span></div>
+      </div>
+    </div>
+
+    <!-- ── FORM SIGNUP ── -->
+    <div id="form-signup" style="display:none;">
+      <div class="form-title">REJOINS<br>NEXUS</div>
+      <p class="form-sub">Crée ton compte en quelques secondes.</p>
+
+      <div class="field">
+        <label class="field-label">Pseudo</label>
+        <div class="field-wrap">
+          <span class="field-icon">👤</span>
+          <input class="field-input" id="su-pseudo" type="text" placeholder="TonPseudo" oninput="clearErrors();checkPseudo()" maxlength="20">
+        </div>
+        <div class="field-error" id="su-pseudo-err"></div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Email</label>
+        <div class="field-wrap">
+          <span class="field-icon">✉️</span>
+          <input class="field-input" id="su-email" type="email" placeholder="ton@email.com" oninput="clearErrors()">
+        </div>
+        <div class="field-error" id="su-email-err"></div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Mot de passe</label>
+        <div class="field-wrap">
+          <span class="field-icon">🔒</span>
+          <input class="field-input" id="su-pass" type="password" placeholder="Min. 6 caractères" oninput="clearErrors();updateStrength()" onkeydown="if(event.key==='Enter')doSignup()">
+          <button class="toggle-pass" onclick="toggleVis('su-pass',this)" tabindex="-1">👁</button>
+        </div>
+        <div class="strength-wrap" id="strength-wrap" style="display:none;">
+          <div class="strength-bars">
+            <div class="strength-bar" id="sb1"></div>
+            <div class="strength-bar" id="sb2"></div>
+            <div class="strength-bar" id="sb3"></div>
+            <div class="strength-bar" id="sb4"></div>
+          </div>
+          <span class="strength-label" id="strength-label"></span>
+        </div>
+        <div class="field-error" id="su-pass-err"></div>
+      </div>
+
+      <label class="checkbox-wrap">
+        <input type="checkbox" id="accept-terms">
+        <div class="checkbox-box">✓</div>
+        <span class="checkbox-label">J'accepte les <a href="#">conditions d'utilisation</a></span>
+      </label>
+
+      <button class="submit-btn btn-signup-style" id="btn-signup" onclick="doSignup()">
+        <span class="btn-text">Créer mon compte →</span>
+        <div class="spinner" id="spin-signup"></div>
+      </button>
+
+      <p class="form-footer">Déjà un compte ? <a onclick="switchTab('login')">Se connecter</a></p>
+    </div>
+
+  </div>
+</main>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <div class="dash-nav">
+    <div class="nav-logo">NEXUS</div>
+    <div style="margin-left:auto;display:flex;gap:10px;align-items:center;">
+      <div id="dash-av" style="width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;cursor:pointer;" onclick="showToast('Profil complet bientôt !')"></div>
+      <button class="nav-link" onclick="doLogout()">Déconnexion</button>
+    </div>
+  </div>
+  <div class="dash-body">
+    <div class="welcome-title" id="dash-welcome">BIENVENUE</div>
+    <p class="welcome-sub">Tu es maintenant connecté sur Nexus.</p>
+
+    <div class="user-card">
+      <div class="user-av" id="dash-user-av"></div>
+      <div>
+        <div class="user-pseudo" id="dash-pseudo"></div>
+        <div class="user-email" id="dash-email"></div>
+        <div style="margin-top:8px;font-size:12px;color:var(--muted);" id="dash-since"></div>
+      </div>
+      <div class="user-badge" id="dash-badge"></div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-box"><div class="stat-val" style="color:var(--accent)" id="dash-msgs">0</div><div class="stat-lbl">Messages</div></div>
+      <div class="stat-box"><div class="stat-val" style="color:var(--accent2)" id="dash-wins">0</div><div class="stat-lbl">Victoires</div></div>
+      <div class="stat-box"><div class="stat-val" style="color:var(--green)" id="dash-rank">#—</div><div class="stat-lbl">Classement</div></div>
+    </div>
+
+    <div class="actions-grid">
+      <div class="action-card" onclick="window.location.href='nexus-chat.html'">
+        <div class="action-icon">💬</div>
+        <div><div class="action-title">Salons</div><div class="action-desc">Rejoindre une discussion</div></div>
+      </div>
+      <div class="action-card" onclick="showToast('Jeux bientôt !')">
+        <div class="action-icon">🎮</div>
+        <div><div class="action-title">Mini-Jeux</div><div class="action-desc">Jouer contre des amis</div></div>
+      </div>
+      <div class="action-card" onclick="window.location.href='nexus-music.html'">
+        <div class="action-icon">🎵</div>
+        <div><div class="action-title">Musique</div><div class="action-desc">Partager des sons</div></div>
+      </div>
+      <div class="action-card" onclick="showToast('Classements bientôt !')">
+        <div class="action-icon">🏆</div>
+        <div><div class="action-title">Classements</div><div class="action-desc">Voir le leaderboard</div></div>
+      </div>
+    </div>
+
+    <div class="danger-zone">
+      <div class="danger-title">⚠️ Zone dangereuse</div>
+      <button class="danger-btn" onclick="confirmDelete()">Supprimer mon compte</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════
+//  DB / SESSION
+// ══════════════════════
+function getDB(){
+  const d=localStorage.getItem('nexus_db');
+  if(!d) return {users:[]};
+  try{return JSON.parse(d);}catch{return{users:[]};}
+}
+function saveDB(db){ localStorage.setItem('nexus_db', JSON.stringify(db)); }
+
+function getSession(){
+  const s=localStorage.getItem('nexus_session');
+  if(!s) return null;
+  try{return JSON.parse(s);}catch{return null;}
+}
+function saveSession(u, remember){
+  const store = remember ? localStorage : sessionStorage;
+  store.setItem('nexus_session', JSON.stringify(u));
+  if(!remember) localStorage.removeItem('nexus_session');
+}
+function clearSession(){
+  localStorage.removeItem('nexus_session');
+  sessionStorage.removeItem('nexus_session');
+}
+
+// Simple hash (côté client uniquement — en prod : bcrypt côté serveur)
+function hashPass(p){
+  let h=5381;
+  for(let i=0;i<p.length;i++) h=((h<<5)+h)+p.charCodeAt(i)|0;
+  return h.toString(36)+'_'+p.length;
+}
+
+// Couleurs avatar
+const AV_COLORS=['linear-gradient(135deg,#7c6aff,#ff6a8a)','linear-gradient(135deg,#00e5ff,#7c6aff)','linear-gradient(135deg,#ff3d71,#ffe600)','linear-gradient(135deg,#00ff9d,#00e5ff)','linear-gradient(135deg,#ffe600,#ff3d71)'];
+function avColor(name){ let h=0; for(let c of name) h=(h*31+c.charCodeAt(0))|0; return AV_COLORS[Math.abs(h)%AV_COLORS.length]; }
+function avLetter(name){ return (name||'?')[0].toUpperCase(); }
+
+// ══════════════════════
+//  INIT
+// ══════════════════════
+window.addEventListener('load',()=>{
+  let db=getDB();
+  // Seed compte ADMIN
+  if(!db.users.find(u=>u.email==='admin@nexus.io')){
+    db.users.push({id:'u_admin',pseudo:'Admin',email:'admin@nexus.io',pass:hashPass('Admin@2025'),joined:Date.now()-864e5*30,msgCount:0,gameWins:0,role:'admin'});
+    saveDB(db);
+  }
+  // Seed compte démo
+  if(!db.users.find(u=>u.email==='demo@nexus.io')){
+    db.users.push({id:'u_demo',pseudo:'Démo',email:'demo@nexus.io',pass:hashPass('nexus123'),joined:Date.now()-864e5*7,msgCount:12,gameWins:3,role:'user'});
+    saveDB(db);
+  }
+  // Check session existante
+  const s=getSession()||JSON.parse(sessionStorage.getItem('nexus_session')||'null');
+  if(s) window.location.href='nexus-home.html';
+  // Tab depuis URL
+  const tab=new URLSearchParams(window.location.search).get('tab');
+  if(tab==='signup') switchTab('signup');
+  buildCursor();
+});
+
+// ══════════════════════
+//  TABS
+// ══════════════════════
+function switchTab(tab){
+  document.getElementById('form-login').style.display=tab==='login'?'block':'none';
+  document.getElementById('form-signup').style.display=tab==='signup'?'block':'none';
+  document.getElementById('tab-login').classList.toggle('active',tab==='login');
+  document.getElementById('tab-signup').classList.toggle('active',tab==='signup');
+  clearErrors();hideAlerts();
+}
+
+// ══════════════════════
+//  VALIDATION
+// ══════════════════════
+function isValidEmail(e){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
+function isValidPseudo(p){ return /^[a-zA-Z0-9_À-ÿ]{2,20}$/.test(p); }
+
+function showFieldError(id,msg){
+  const el=document.getElementById(id);
+  if(el){el.textContent=msg;el.classList.add('show');}
+  const input=document.getElementById(id.replace('-err',''));
+  if(input) input.classList.add('error');
+}
+function clearErrors(){
+  document.querySelectorAll('.field-error').forEach(e=>{e.classList.remove('show');});
+  document.querySelectorAll('.field-input').forEach(e=>e.classList.remove('error'));
+  hideAlerts();
+}
+function showAlert(type,msg){
+  hideAlerts();
+  const el=document.getElementById('alert-'+type);
+  document.getElementById('alert-'+type+'-msg').textContent=msg;
+  el.classList.add('show');
+}
+function hideAlerts(){
+  document.querySelectorAll('.alert').forEach(e=>e.classList.remove('show'));
+}
+
+// ══════════════════════
+//  PASSWORD STRENGTH
+// ══════════════════════
+function updateStrength(){
+  const pass=document.getElementById('su-pass').value;
+  const wrap=document.getElementById('strength-wrap');
+  if(!pass){wrap.style.display='none';return;}
+  wrap.style.display='block';
+  let score=0;
+  if(pass.length>=6) score++;
+  if(pass.length>=10) score++;
+  if(/[A-Z]/.test(pass)&&/[0-9]/.test(pass)) score++;
+  if(/[^a-zA-Z0-9]/.test(pass)) score++;
+  const colors=['#ff3d71','#ffe600','#00e5ff','#00ff9d'];
+  const labels=['Trop faible','Faible','Bien','Fort 🔥'];
+  for(let i=1;i<=4;i++){
+    const b=document.getElementById('sb'+i);
+    b.style.background=i<=score?colors[score-1]:'var(--bg3)';
+  }
+  document.getElementById('strength-label').textContent=labels[score-1]||'';
+  document.getElementById('strength-label').style.color=colors[score-1]||'var(--muted)';
+}
+
+// ══════════════════════
+//  PSEUDO CHECK
+// ══════════════════════
+function checkPseudo(){
+  const val=document.getElementById('su-pseudo').value.trim();
+  const err=document.getElementById('su-pseudo-err');
+  if(!val)return;
+  if(!isValidPseudo(val)){
+    err.textContent='2-20 caractères, lettres/chiffres/_';
+    err.classList.add('show');
+    document.getElementById('su-pseudo').classList.add('error');
+  } else {
+    const db=getDB();
+    if(db.users.find(u=>u.pseudo.toLowerCase()===val.toLowerCase())){
+      err.textContent='Ce pseudo est déjà pris.';
+      err.classList.add('show');
+      document.getElementById('su-pseudo').classList.add('error');
+    } else {
+      err.classList.remove('show');
+      document.getElementById('su-pseudo').classList.remove('error');
+    }
+  }
+}
+
+// ══════════════════════
+//  TOGGLE PASSWORD
+// ══════════════════════
+function toggleVis(inputId, btn){
+  const input=document.getElementById(inputId);
+  const isPass=input.type==='password';
+  input.type=isPass?'text':'password';
+  btn.textContent=isPass?'🙈':'👁';
+}
+
+// ══════════════════════
+//  LOGIN
+// ══════════════════════
+function doLogin(){
+  clearErrors();
+  const email=document.getElementById('li-email').value.trim();
+  const pass=document.getElementById('li-pass').value;
+  const remember=document.getElementById('remember-me').checked;
+  let valid=true;
+
+  if(!email||!isValidEmail(email)){showFieldError('li-email-err','Adresse email invalide.');valid=false;}
+  if(!pass){showFieldError('li-pass-err','Mot de passe requis.');valid=false;}
+  if(!valid)return;
+
+  setLoading('login',true);
+  setTimeout(()=>{
+    const db=getDB();
+    const user=db.users.find(u=>u.email===email && u.pass===hashPass(pass));
+    setLoading('login',false);
+    if(!user){
+      showAlert('error','Email ou mot de passe incorrect.');
+      document.getElementById('li-email').classList.add('error');
+      document.getElementById('li-pass').classList.add('error');
+      return;
+    }
+    saveSession(user,remember);
+    showToast('✅ Bienvenue '+user.pseudo+' !');
+    setTimeout(()=>window.location.href='nexus-home.html',600);
+  },900);
+}
+
+// ══════════════════════
+//  SIGNUP
+// ══════════════════════
+function doSignup(){
+  clearErrors();
+  const pseudo=document.getElementById('su-pseudo').value.trim();
+  const email=document.getElementById('su-email').value.trim();
+  const pass=document.getElementById('su-pass').value;
+  const terms=document.getElementById('accept-terms').checked;
+  let valid=true;
+
+  if(!pseudo||!isValidPseudo(pseudo)){showFieldError('su-pseudo-err','Pseudo invalide (2-20 chars, lettres/chiffres/_).');valid=false;}
+  if(!email||!isValidEmail(email)){showFieldError('su-email-err','Adresse email invalide.');valid=false;}
+  if(!pass||pass.length<6){showFieldError('su-pass-err','Mot de passe trop court (min. 6 caractères).');valid=false;}
+  if(!terms){showAlert('error','Tu dois accepter les conditions d\'utilisation.');valid=false;}
+  if(!valid)return;
+
+  const db=getDB();
+  if(db.users.find(u=>u.email===email)){showFieldError('su-email-err','Cet email est déjà utilisé.');return;}
+  if(db.users.find(u=>u.pseudo.toLowerCase()===pseudo.toLowerCase())){showFieldError('su-pseudo-err','Ce pseudo est déjà pris.');return;}
+
+  setLoading('signup',true);
+  setTimeout(()=>{
+    const user={id:'u'+Date.now(),pseudo,email,pass:hashPass(pass),joined:Date.now(),msgCount:0,gameWins:0,role:'user'};
+    db.users.push(user);saveDB(db);
+    saveSession(user,false);
+    setLoading('signup',false);
+    showAlert('success','Compte créé avec succès !');
+    showToast('🎉 Bienvenue sur Nexus, '+pseudo+' !');
+    setTimeout(()=>window.location.href='nexus-home.html',800);
+  },1000);
+}
+
+// ══════════════════════
+//  LOADING STATE
+// ══════════════════════
+function setLoading(form,on){
+  const btn=document.getElementById('btn-'+form);
+  const txt=btn.querySelector('.btn-text');
+  const spin=document.getElementById('spin-'+form);
+  btn.classList.toggle('loading',on);
+  txt.style.opacity=on?'0':'1';
+  spin.classList.toggle('show',on);
+}
+
+// ══════════════════════
+//  SOCIAL (UI seulement)
+// ══════════════════════
+function socialLogin(provider){
+  showToast('Connexion '+provider+' — bientôt disponible !');
+}
+
+// ══════════════════════
+//  FORGOT PASSWORD
+// ══════════════════════
+function showForgot(){
+  const email=document.getElementById('li-email').value.trim();
+  if(!email||!isValidEmail(email)){
+    showFieldError('li-email-err','Entre ton email d\'abord.');
+    return;
+  }
+  showToast('📧 Lien envoyé à '+email+' (simulation)');
+}
+
+// ══════════════════════
+//  DASHBOARD
+// ══════════════════════
+function showDashboard(user){
+  document.getElementById('dashboard').classList.add('open');
+  const db=getDB();
+  const u=db.users.find(x=>x.id===user.id)||user;
+
+  document.getElementById('dash-welcome').textContent='SALUT, '+u.pseudo.toUpperCase()+'  👋';
+  document.getElementById('dash-pseudo').textContent=u.pseudo;
+  document.getElementById('dash-email').textContent=u.email;
+  document.getElementById('dash-since').textContent='Membre depuis le '+new Date(u.joined).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('dash-msgs').textContent=u.msgCount||0;
+  document.getElementById('dash-wins').textContent=u.gameWins||0;
+
+  // Rang
+  const sorted=db.users.sort((a,b)=>((b.msgCount||0)+(b.gameWins||0)*3)-((a.msgCount||0)+(a.gameWins||0)*3));
+  const rank=sorted.findIndex(x=>x.id===u.id)+1;
+  document.getElementById('dash-rank').textContent='#'+rank;
+
+  // Avatar
+  const av=document.getElementById('dash-user-av');
+  av.style.background=avColor(u.pseudo);
+  av.textContent=avLetter(u.pseudo);
+  const nav_av=document.getElementById('dash-av');
+  nav_av.style.background=avColor(u.pseudo);
+  nav_av.textContent=avLetter(u.pseudo);
+
+  // Badge
+  const badge=document.getElementById('dash-badge');
+  badge.textContent=u.role==='admin'?'ADMIN':'MEMBRE';
+  badge.style.background=u.role==='admin'?'rgba(255,61,113,.15)':'rgba(0,255,157,.1)';
+  badge.style.color=u.role==='admin'?'var(--accent2)':'var(--green)';
+  badge.style.border=u.role==='admin'?'1px solid rgba(255,61,113,.2)':'1px solid rgba(0,255,157,.2)';
+}
+
+function doLogout(){
+  clearSession();
+  window.location.href='nexus-home.html';
+}
+
+function confirmDelete(){
+  if(!confirm('Supprimer ton compte définitivement ? Cette action est irréversible.'))return;
+  const s=getSession()||JSON.parse(sessionStorage.getItem('nexus_session')||'null');
+  if(s){
+    const db=getDB();
+    db.users=db.users.filter(u=>u.id!==s.id);
+    saveDB(db);
+  }
+  doLogout();
+  showToast('Compte supprimé.');
+}
+
+// ══════════════════════
+//  NAV
+// ══════════════════════
+function goHome(){ window.location.href='nexus-home.html'; }
+
+// ══════════════════════
+//  CURSOR
+// ══════════════════════
+function buildCursor(){
+  const cursor=document.getElementById('cursor');
+  const ring=document.getElementById('cursor-ring');
+  let mx=0,my=0,rx=0,ry=0;
+  document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
+  (function anim(){cursor.style.transform=`translate3d(${mx}px,${my}px,0) translate(-50%,-50%)`;rx+=(mx-rx)*.18;ry+=(my-ry)*.18;ring.style.transform=`translate3d(${rx}px,${ry}px,0) translate(-50%,-50%)`;requestAnimationFrame(anim);})();
+  document.querySelectorAll('button,a,input,.action-card').forEach(el=>{
+    el.addEventListener('mouseenter',()=>{cursor.style.width='16px';cursor.style.height='16px';ring.style.width='52px';ring.style.height='52px';});
+    el.addEventListener('mouseleave',()=>{cursor.style.width='10px';cursor.style.height='10px';ring.style.width='36px';ring.style.height='36px';});
+  });
+}
+
+// ══════════════════════
+//  TOAST
+// ══════════════════════
+let _tt;
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(_tt);_tt=setTimeout(()=>t.classList.remove('show'),2800);
+}
+</script>
+<script src="nexus-user-popup.js"></script>
+</body>
+</html>

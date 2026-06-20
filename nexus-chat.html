@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus — Chat</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#06070e;--bg2:#0b0d18;--bg3:#101323;--bg4:#161930;--bg5:#1c203c;
+  --border:rgba(255,255,255,.06);--border2:rgba(255,255,255,.12);
+  --accent:#00e5ff;--accent2:#ff3d71;--green:#00ff9d;--yellow:#ffe600;--purple:#7c6aff;
+  --white:#edf0ff;--muted:#4a4e6a;--muted2:#767da0;
+  --fd:'Bebas Neue',sans-serif;--fb:'Outfit',sans-serif;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:var(--fb);background:var(--bg);color:var(--white);display:flex;flex-direction:column;cursor:none;}
+
+/* CURSOR */
+#cur{width:9px;height:9px;background:var(--white);border-radius:50%;position:fixed;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);will-change:transform;mix-blend-mode:difference;transition:width .18s,height .18s;}
+#cur-ring{width:32px;height:32px;border:1px solid rgba(255,255,255,.22);border-radius:50%;position:fixed;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);will-change:transform;transition:width .22s,height .22s;}
+
+/* NOISE */
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");pointer-events:none;z-index:0;}
+
+/* ── NAV ── */
+#nav{height:54px;display:flex;align-items:center;padding:0 0 0 0;background:rgba(6,7,14,.95);backdrop-filter:blur(28px);border-bottom:1px solid var(--border);flex-shrink:0;position:relative;z-index:100;}
+.nav-logo{font-family:var(--fd);font-size:22px;letter-spacing:4px;background:linear-gradient(90deg,var(--accent),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;cursor:pointer;padding:0 18px;border-right:1px solid var(--border);height:100%;display:flex;align-items:center;}
+.nav-ch-info{display:flex;align-items:center;gap:10px;padding:0 16px;flex:1;min-width:0;}
+.nav-ch-icon{font-size:16px;}
+.nav-ch-name{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.nav-ch-desc{font-size:12px;color:var(--muted2);border-left:1px solid var(--border);padding-left:10px;margin-left:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:300px;}
+.nav-actions{display:flex;align-items:center;gap:6px;padding:0 12px;margin-left:auto;flex-shrink:0;}
+.nav-btn{padding:6px 14px;border-radius:8px;font-family:var(--fb);font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all .2s;}
+.nav-ghost{background:none;color:var(--muted);border:1px solid var(--border);}
+.nav-ghost:hover{color:var(--white);border-color:var(--border2);}
+.nav-solid{background:var(--accent);color:#06070e;}
+.nav-solid:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,229,255,.25);}
+.admin-badge{padding:4px 10px;border-radius:20px;background:rgba(255,61,113,.12);color:var(--accent2);border:1px solid rgba(255,61,113,.2);font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;}
+
+/* ── LAYOUT ── */
+#layout{flex:1;display:flex;overflow:hidden;position:relative;z-index:1;}
+
+/* ── SIDEBAR SALONS ── */
+#sidebar{width:230px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;}
+.sb-header{padding:14px 14px 10px;border-bottom:1px solid var(--border);}
+.sb-server-name{font-family:var(--fd);font-size:16px;letter-spacing:2px;margin-bottom:2px;}
+.sb-server-sub{font-size:11px;color:var(--muted2);}
+.sb-channels{flex:1;overflow-y:auto;padding:8px 6px;}
+.ch-category{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:12px 8px 5px;display:flex;align-items:center;justify-content:space-between;}
+.ch-add-btn{width:18px;height:18px;border-radius:5px;background:none;border:none;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s;}
+.ch-add-btn:hover{color:var(--white);background:rgba(255,255,255,.08);}
+.ch-item{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:8px;cursor:pointer;color:var(--muted2);font-size:13px;font-weight:400;transition:all .15s;position:relative;margin-bottom:1px;user-select:none;}
+.ch-item:hover{background:var(--bg3);color:var(--white);}
+.ch-item.active{background:var(--bg4);color:var(--white);}
+.ch-item.active::before{content:'';position:absolute;left:-6px;top:20%;height:60%;width:3px;background:var(--accent);border-radius:0 3px 3px 0;}
+.ch-icon{font-size:14px;flex-shrink:0;}
+.ch-name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ch-unread{min-width:18px;height:18px;background:var(--accent2);border-radius:9px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;color:#fff;}
+.ch-rm-btn{width:18px;height:18px;border-radius:5px;background:none;border:none;color:var(--muted);cursor:pointer;display:none;align-items:center;justify-content:center;font-size:11px;transition:all .15s;}
+.ch-item:hover .ch-rm-btn{display:flex;}
+.ch-rm-btn:hover{color:var(--accent2);}
+
+/* User panel */
+.sb-user{padding:10px 10px;background:var(--bg);border-top:1px solid var(--border);display:flex;align-items:center;gap:9px;}
+.sb-user-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0;position:relative;cursor:pointer;}
+.sb-user-dot{position:absolute;bottom:0;right:0;width:9px;height:9px;border-radius:50%;border:2px solid var(--bg);}
+.sb-user-info{flex:1;min-width:0;}
+.sb-user-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sb-user-status{font-size:10px;color:var(--muted2);}
+.sb-user-btns{display:flex;gap:4px;}
+.sb-user-btn{width:26px;height:26px;border-radius:7px;background:none;border:none;color:var(--muted2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .15s;}
+.sb-user-btn:hover{background:var(--bg3);color:var(--white);}
+
+/* ── MAIN CHAT ── */
+#main{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg);}
+
+/* Welcome screen */
+#welcome{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;text-align:center;animation:fadeUp .4s ease both;}
+.welcome-icon{font-size:64px;margin-bottom:20px;}
+.welcome-title{font-family:var(--fd);font-size:48px;letter-spacing:4px;margin-bottom:10px;}
+.welcome-sub{font-size:14px;color:var(--muted2);font-weight:300;max-width:380px;line-height:1.7;}
+
+/* Messages */
+#messages-wrap{flex:1;overflow-y:auto;padding:16px 20px 0;display:flex;flex-direction:column;gap:2px;scrollbar-width:thin;scrollbar-color:var(--bg3) transparent;}
+.day-sep{display:flex;align-items:center;gap:10px;margin:16px 0 10px;color:var(--muted);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;}
+.day-sep::before,.day-sep::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* Message groups */
+.msg-group{display:flex;gap:12px;padding:4px 6px;border-radius:9px;transition:background .12s;}
+.msg-group:hover{background:rgba(255,255,255,.018);}
+.msg-av{width:36px;height:36px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;margin-top:2px;cursor:pointer;transition:transform .2s;}
+.msg-av:hover{transform:scale(1.1);}
+.msg-av img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.msg-body{flex:1;min-width:0;}
+.msg-meta{display:flex;align-items:baseline;gap:8px;margin-bottom:3px;}
+.msg-author{font-size:14px;font-weight:600;cursor:pointer;}
+.msg-author:hover{text-decoration:underline;}
+.msg-author.is-admin{color:var(--accent2);}
+.msg-author.is-admin::after{content:'ADMIN';font-size:9px;background:rgba(255,61,113,.15);color:var(--accent2);border:1px solid rgba(255,61,113,.2);padding:1px 5px;border-radius:4px;margin-left:5px;font-weight:700;vertical-align:middle;letter-spacing:1px;}
+.msg-time{font-size:11px;color:var(--muted);}
+.msg-text{font-size:14px;color:#c0c4e0;line-height:1.6;word-break:break-word;}
+.msg-text .mention{color:var(--accent);background:rgba(0,229,255,.08);padding:0 4px;border-radius:4px;}
+.msg-cont{display:flex;gap:12px;padding:1px 6px;}
+.msg-cont .spacer{width:36px;flex-shrink:0;}
+.msg-cont .msg-text{font-size:14px;color:#c0c4e0;line-height:1.6;}
+/* Message actions */
+.msg-actions{display:none;position:absolute;right:10px;top:-14px;background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:4px;gap:2px;align-items:center;}
+.msg-group:hover .msg-actions,.msg-cont:hover .msg-actions{display:flex;}
+.msg-group,.msg-cont{position:relative;}
+.msg-act{width:26px;height:26px;border-radius:6px;background:none;border:none;color:var(--muted2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .15s;}
+.msg-act:hover{background:var(--bg4);color:var(--white);}
+.msg-react{display:flex;align-items:center;gap:3px;padding:2px 7px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;font-size:12px;cursor:pointer;transition:all .15s;margin-top:4px;width:fit-content;}
+.msg-react:hover{border-color:var(--border2);}
+
+/* Typing indicator */
+.typing-indicator{padding:8px 20px;font-size:12px;color:var(--muted2);display:none;align-items:center;gap:8px;flex-shrink:0;}
+.typing-indicator.show{display:flex;}
+.typing-dots{display:flex;gap:3px;}
+.typing-dot{width:5px;height:5px;background:var(--muted2);border-radius:50%;animation:tDot 1.4s ease-in-out infinite;}
+.typing-dot:nth-child(2){animation-delay:.2s;}
+.typing-dot:nth-child(3){animation-delay:.4s;}
+@keyframes tDot{0%,80%,100%{transform:scale(.6);opacity:.4;}40%{transform:scale(1);opacity:1;}}
+
+/* Input */
+#input-zone{padding:12px 16px;flex-shrink:0;}
+.input-box{background:var(--bg3);border:1px solid var(--border);border-radius:13px;display:flex;align-items:center;gap:8px;padding:10px 13px;transition:border-color .2s,box-shadow .2s;}
+.input-box:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,255,.07);}
+.input-btn{width:30px;height:30px;border-radius:8px;background:none;border:none;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:17px;transition:all .15s;flex-shrink:0;}
+.input-btn:hover{color:var(--accent);background:rgba(0,229,255,.07);}
+#msg-input{flex:1;background:none;border:none;outline:none;color:var(--white);font-family:var(--fb);font-size:14px;}
+#msg-input::placeholder{color:var(--muted);}
+.send-btn{background:var(--accent);border:none;color:#06070e;width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;font-weight:700;transition:all .2s;flex-shrink:0;}
+.send-btn:hover{transform:scale(1.08);box-shadow:0 4px 14px rgba(0,229,255,.3);}
+.send-btn:disabled{opacity:.4;cursor:default;transform:none;}
+
+/* ── MEMBERS PANEL ── */
+#members{width:200px;background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;}
+.members-header{padding:14px 12px 8px;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);}
+.members-cat{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);padding:10px 12px 4px;}
+.member-row{display:flex;align-items:center;gap:8px;padding:5px 10px;border-radius:7px;cursor:pointer;transition:background .15s;margin:0 4px 1px;}
+.member-row:hover{background:var(--bg3);}
+.member-av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;position:relative;}
+.member-av img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.member-dot{position:absolute;bottom:0;right:0;width:8px;height:8px;border-radius:50%;border:2px solid var(--bg2);}
+.member-name{font-size:12px;color:var(--muted2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.member-name.is-admin{color:var(--accent2);}
+.member-badge{font-size:9px;padding:1px 5px;border-radius:20px;font-weight:700;letter-spacing:1px;flex-shrink:0;}
+
+/* ── ADMIN PANEL ── */
+#admin-panel{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(8px);}
+#admin-panel.on{display:flex;}
+.admin-box{background:var(--bg2);border:1px solid var(--border);border-radius:22px;width:560px;max-height:85vh;overflow-y:auto;box-shadow:0 40px 100px rgba(0,0,0,.6);animation:panelIn .3s cubic-bezier(.34,1.2,.64,1);}
+@keyframes panelIn{from{opacity:0;transform:scale(.93) translateY(20px);}to{opacity:1;transform:scale(1) translateY(0);}}
+.admin-header{padding:22px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg2);z-index:10;}
+.admin-title{font-family:var(--fd);font-size:26px;letter-spacing:2px;}
+.admin-sub{font-size:13px;color:var(--muted2);margin-top:2px;}
+.admin-close{width:32px;height:32px;border-radius:9px;background:var(--bg3);border:none;color:var(--muted2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:all .15s;}
+.admin-close:hover{background:var(--bg4);color:var(--white);}
+.admin-body{padding:20px 24px;}
+.admin-tabs{display:flex;gap:3px;background:var(--bg3);border-radius:11px;padding:3px;margin-bottom:22px;}
+.admin-tab{flex:1;padding:9px;text-align:center;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:var(--fb);color:var(--muted);background:none;transition:all .2s;}
+.admin-tab.active{background:var(--accent2);color:#fff;}
+.atab-content{display:none;}
+.atab-content.on{display:block;}
+
+/* Admin — Salons */
+.ch-list-admin{display:flex;flex-direction:column;gap:8px;margin-bottom:18px;}
+.ch-admin-item{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;transition:all .2s;}
+.ch-admin-item:hover{border-color:var(--border2);}
+.ch-admin-icon{font-size:18px;flex-shrink:0;}
+.ch-admin-info{flex:1;min-width:0;}
+.ch-admin-name{font-weight:600;font-size:14px;}
+.ch-admin-desc{font-size:11px;color:var(--muted2);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ch-admin-btns{display:flex;gap:6px;}
+.ch-admin-btn{padding:5px 12px;border-radius:7px;font-family:var(--fb);font-size:11px;font-weight:600;cursor:pointer;border:none;transition:all .15s;}
+.ch-admin-btn:hover{transform:scale(1.04);}
+
+/* Create channel form */
+.create-ch-form{background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:18px;}
+.form-title{font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.form-field label{font-size:11px;font-weight:600;color:var(--muted2);display:block;margin-bottom:5px;letter-spacing:.5px;}
+.form-input,.form-select{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:10px 13px;color:var(--white);font-family:var(--fb);font-size:13px;outline:none;transition:border-color .2s;}
+.form-input:focus,.form-select:focus{border-color:var(--accent2);}
+.form-input::placeholder{color:var(--muted);}
+.form-select option{background:var(--bg2);}
+.icon-picker{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+.icon-opt{width:34px;height:34px;border-radius:8px;background:var(--bg2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;transition:all .15s;}
+.icon-opt:hover,.icon-opt.sel{background:var(--bg4);border-color:var(--accent2);}
+.create-btn-full{width:100%;padding:11px;border-radius:10px;background:var(--accent2);color:#fff;font-family:var(--fb);font-size:13px;font-weight:700;cursor:pointer;border:none;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:7px;margin-top:10px;}
+.create-btn-full:hover{background:#ff6088;transform:translateY(-1px);}
+
+/* Admin — Membres */
+.member-admin-list{display:flex;flex-direction:column;gap:6px;}
+.member-admin-item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:11px;}
+.member-admin-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;}
+.member-admin-av img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.member-admin-info{flex:1;}
+.member-admin-name{font-weight:600;font-size:14px;}
+.member-admin-sub{font-size:11px;color:var(--muted2);}
+.role-select{padding:5px 10px;border-radius:7px;background:var(--bg2);border:1px solid var(--border);color:var(--white);font-family:var(--fb);font-size:11px;outline:none;}
+
+/* EMOJI PICKER */
+#emoji-picker{position:fixed;bottom:70px;left:230px;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:10px;display:none;z-index:200;grid-template-columns:repeat(8,1fr);gap:4px;box-shadow:0 20px 60px rgba(0,0,0,.5);}
+#emoji-picker.on{display:grid;}
+.ep-em{width:34px;height:34px;border-radius:7px;background:none;border:none;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;}
+.ep-em:hover{background:var(--bg3);}
+
+/* DELETE CONFIRM */
+#del-confirm{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:600;display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px);}
+#del-confirm.on{display:flex;}
+.del-box{background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:26px;max-width:380px;width:100%;animation:panelIn .25s ease;}
+.del-title{font-family:var(--fd);font-size:24px;letter-spacing:2px;color:var(--accent2);margin-bottom:6px;}
+.del-sub{font-size:13px;color:var(--muted2);margin-bottom:20px;line-height:1.5;}
+.del-acts{display:flex;gap:9px;justify-content:flex-end;}
+.del-btn{padding:9px 20px;border-radius:10px;font-family:var(--fb);font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .2s;}
+.del-cancel{background:var(--bg3);color:var(--white);border:1px solid var(--border);}
+.del-ok{background:var(--accent2);color:#fff;}
+.del-ok:hover{background:#ff6088;}
+
+/* TOAST */
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--bg3);border:1px solid var(--accent);color:var(--white);padding:9px 20px;border-radius:28px;font-size:13px;font-weight:500;z-index:9000;transition:transform .3s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;pointer-events:none;}
+#toast.on{transform:translateX(-50%) translateY(0);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:4px;}
+.msg-img-wrap{margin-top:8px;border-radius:10px;overflow:hidden;max-width:340px;}
+.msg-img-wrap img{width:100%;display:block;border-radius:10px;}
+</style>
+</head>
+<body>
+<div id="cur"></div><div id="cur-ring"></div>
+
+<!-- NAV -->
+<div id="nav">
+  <div class="nav-logo" onclick="window.location.href='nexus-home.html'">NEXUS</div>
+  <div class="nav-ch-info">
+    <span class="nav-ch-icon" id="nav-icon">#</span>
+    <span class="nav-ch-name" id="nav-chname">Choisir un salon</span>
+    <span class="nav-ch-desc" id="nav-chdesc"></span>
+  </div>
+  <div class="nav-actions">
+    <span class="admin-badge" id="admin-badge" style="display:none;">👑 Admin</span>
+    <button class="nav-btn nav-ghost" onclick="window.location.href='nexus-home.html'">← Accueil</button>
+    <button class="nav-btn nav-ghost" id="admin-btn" style="display:none;" onclick="openAdmin()">⚙️ Gérer</button>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div id="layout">
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="sb-header">
+      <div class="sb-server-name" id="sb-server-name">NEXUS</div>
+      <div class="sb-server-sub" id="sb-member-count">0 membres</div>
+    </div>
+    <div class="sb-channels" id="sb-channels">
+      <!-- rendered dynamically -->
+    </div>
+    <div class="sb-user" id="sb-user">
+      <div class="sb-user-av" id="sb-av" onclick="window.location.href='nexus-profile.html'">
+        <img id="sb-av-img" style="display:none;" alt="">
+        <span id="sb-av-letter">?</span>
+        <div class="sb-user-dot" id="sb-dot" style="background:var(--green);"></div>
+      </div>
+      <div class="sb-user-info">
+        <div class="sb-user-name" id="sb-uname">Non connecté</div>
+        <div class="sb-user-status" id="sb-ustatus">En ligne</div>
+      </div>
+      <div class="sb-user-btns">
+        <button class="sb-user-btn" onclick="window.location.href='nexus-profile.html'" title="Profil">👤</button>
+        <button class="sb-user-btn" onclick="doLogout()" title="Déconnexion">🚪</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+    <!-- Welcome -->
+    <div id="welcome">
+      <div class="welcome-icon">💬</div>
+      <div class="welcome-title">BIENVENUE</div>
+      <p class="welcome-sub">Sélectionne un salon à gauche pour commencer à discuter avec la communauté.</p>
+    </div>
+    <!-- Messages -->
+    <div id="messages-wrap" style="display:none;"></div>
+    <!-- Typing -->
+    <div class="typing-indicator" id="typing-indicator">
+      <div class="typing-dots"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
+      <span id="typing-text">quelqu'un écrit…</span>
+    </div>
+    <!-- Input -->
+    <div id="input-zone" style="display:none;">
+      <div class="input-box">
+        <button class="input-btn" onclick="toggleEmojiPicker()" title="Emoji">😊</button>
+        <button class="input-btn" onclick="document.getElementById('file-attach').click()" title="Joindre">📎</button>
+        <input type="file" id="file-attach" accept="image/*" style="display:none;">
+        <input id="msg-input" placeholder="Message dans #général…" onkeydown="handleKey(event)" oninput="handleTyping()">
+        <button class="input-btn" id="gif-btn" onclick="toast('GIFs — bientôt !')" title="GIF">GIF</button>
+        <button class="send-btn" id="send-btn" onclick="sendMsg()" disabled>➤</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MEMBERS -->
+  <div id="members">
+    <div class="members-header">MEMBRES</div>
+    <div id="members-list"></div>
+  </div>
+</div>
+
+<!-- EMOJI PICKER -->
+<div id="emoji-picker">
+  <!-- filled by JS -->
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="admin-panel" onclick="closeAdminOutside(event)">
+  <div class="admin-box">
+    <div class="admin-header">
+      <div>
+        <div class="admin-title">⚙️ PANEL ADMIN</div>
+        <div class="admin-sub">Gère les salons et les membres</div>
+      </div>
+      <button class="admin-close" onclick="closeAdmin()">✕</button>
+    </div>
+    <div class="admin-body">
+      <div class="admin-tabs">
+        <button class="admin-tab active" onclick="switchAdminTab('salons')">💬 Salons</button>
+        <button class="admin-tab" onclick="switchAdminTab('membres')">👥 Membres</button>
+        <button class="admin-tab" onclick="switchAdminTab('serveur')">⚙️ Serveur</button>
+      </div>
+
+      <!-- SALONS -->
+      <div class="atab-content on" id="atab-salons">
+        <div class="ch-list-admin" id="admin-ch-list"></div>
+        <div class="create-ch-form">
+          <div class="form-title">➕ Créer un salon</div>
+          <div class="form-row">
+            <div class="form-field">
+              <label>Nom du salon</label>
+              <input class="form-input" id="new-ch-name" placeholder="ex: général">
+            </div>
+            <div class="form-field">
+              <label>Type</label>
+              <select class="form-select" id="new-ch-type">
+                <option value="text"># Texte</option>
+                <option value="announce">📢 Annonces</option>
+                <option value="media">🎨 Médias</option>
+                <option value="gaming">🎮 Gaming</option>
+                <option value="music">🎵 Musique</option>
+                <option value="off">💬 Off-topic</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-field" style="margin-bottom:10px;">
+            <label>Description (optionnel)</label>
+            <input class="form-input" id="new-ch-desc" placeholder="De quoi parle ce salon ?">
+          </div>
+          <div class="form-field" style="margin-bottom:10px;">
+            <label>Icône</label>
+            <div class="icon-picker" id="icon-picker"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-field">
+              <label>Accès</label>
+              <select class="form-select" id="new-ch-access">
+                <option value="all">🌍 Tous les membres</option>
+                <option value="admin">👑 Admin seulement</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label>Catégorie</label>
+              <select class="form-select" id="new-ch-cat">
+                <option value="general">Général</option>
+                <option value="discussion">Discussion</option>
+                <option value="fun">Fun</option>
+                <option value="gaming">Gaming</option>
+              </select>
+            </div>
+          </div>
+          <button class="create-btn-full" onclick="createChannel()">＋ Créer le salon</button>
+        </div>
+      </div>
+
+      <!-- MEMBRES -->
+      <div class="atab-content" id="atab-membres">
+        <div class="member-admin-list" id="admin-member-list"></div>
+      </div>
+
+      <!-- SERVEUR -->
+      <div class="atab-content" id="atab-serveur">
+        <div class="create-ch-form">
+          <div class="form-title">⚙️ Paramètres du serveur</div>
+          <div class="form-field" style="margin-bottom:10px;">
+            <label>Nom du serveur</label>
+            <input class="form-input" id="server-name-input" placeholder="Nexus Central">
+          </div>
+          <div class="form-field" style="margin-bottom:10px;">
+            <label>Description</label>
+            <input class="form-input" id="server-desc-input" placeholder="Mon espace Nexus">
+          </div>
+          <button class="create-btn-full" onclick="saveServerSettings()">💾 Sauvegarder</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM -->
+<div id="del-confirm">
+  <div class="del-box">
+    <div class="del-title">SUPPRIMER ?</div>
+    <div class="del-sub" id="del-sub">Cette action est irréversible. Tous les messages seront perdus.</div>
+    <div class="del-acts">
+      <button class="del-btn del-cancel" onclick="document.getElementById('del-confirm').classList.remove('on')">Annuler</button>
+      <button class="del-btn del-ok" id="del-ok-btn">Supprimer</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════
+//  DB
+// ═══════════════════════════════════
+function getSession(){
+  try{
+    // Essaye nx_s d'abord (nouveau), puis nexus_session (ancien)
+    return JSON.parse(
+      localStorage.getItem('nx_s') ||
+      sessionStorage.getItem('nx_s') ||
+      localStorage.getItem('nexus_session') ||
+      sessionStorage.getItem('nexus_session') ||
+      'null'
+    );
+  }catch{return null;}
+}
+function getChatDB(){
+  try{return JSON.parse(localStorage.getItem('nx_chat')||'null');}catch{return null;}
+}
+function saveChatDB(d){localStorage.setItem('nx_chat',JSON.stringify(d));}
+
+const DEFAULT_CHANNELS = [
+  {id:'ch_general',name:'général',type:'text',icon:'💬',desc:'Le salon principal',cat:'general',access:'all',pinned:true},
+  {id:'ch_annonces',name:'annonces',type:'announce',icon:'📢',desc:'Annonces importantes',cat:'general',access:'admin',pinned:true},
+  {id:'ch_blabla',name:'blabla',type:'off',icon:'🗣️',desc:'Parle de tout et de rien',cat:'discussion',access:'all',pinned:false},
+  {id:'ch_memes',name:'mèmes',type:'media',icon:'😂',desc:'Les meilleurs mèmes',cat:'fun',access:'all',pinned:false},
+  {id:'ch_gaming',name:'gaming',type:'gaming',icon:'🎮',desc:'Talk gaming',cat:'gaming',access:'all',pinned:false},
+];
+
+const AV_COLORS=['linear-gradient(135deg,#00e5ff,#7c6aff)','linear-gradient(135deg,#ff3d71,#ffe600)','linear-gradient(135deg,#00ff9d,#00e5ff)','linear-gradient(135deg,#ffe600,#ff3d71)','linear-gradient(135deg,#7c6aff,#ff6aff)'];
+function avCol(n){let h=0;for(let c of(n||'?'))h=(h*31+c.charCodeAt(0))|0;return AV_COLORS[Math.abs(h)%AV_COLORS.length];}
+function avLet(n){return(n||'?')[0].toUpperCase();}
+
+const EMOJIS=['😀','😂','🔥','❤️','👍','💎','🎉','😍','🤔','😅','👏','🙏','💪','🤣','😎','🥳','👑','⚡','🌟','💯','🎮','⛩️','🎵','🏆','🐉'];
+const ICONS=['💬','📢','🎨','🎮','🎵','💡','🔒','🌍','🎭','🏆','😂','🔥'];
+
+// ═══════════════════════════════════
+//  STATE
+// ═══════════════════════════════════
+let DB = null;
+let session = null;
+let isAdmin = false;
+let activeChannel = null;
+let selectedIcon = '💬';
+let emojiOpen = false;
+let typingTimer = null;
+let typingSimTimer = null;
+
+// ═══════════════════════════════════
+//  INIT
+// ═══════════════════════════════════
+window.addEventListener('load', () => {
+  session = getSession();
+  if (!session) { window.location.href = 'nexus-auth.html?tab=login'; return; }
+
+  // Load or init DB
+  DB = getChatDB();
+  if (!DB) {
+    DB = {
+      serverName: 'Nexus Central',
+      serverDesc: 'Bienvenue !',
+      channels: DEFAULT_CHANNELS,
+      messages: {},
+      reactions: {},
+    };
+    // Seed welcome messages
+    DB.messages['ch_general'] = [
+      {id:'m1',userId:'system',pseudo:'Nexus',text:'👋 Bienvenue sur Nexus Chat ! Commence à discuter.',ts:Date.now()-3600e3,isSystem:true},
+    ];
+    DB.messages['ch_annonces'] = [
+      {id:'m2',userId:'system',pseudo:'Nexus',text:'🚀 Nexus est en ligne ! Profite bien de la plateforme.',ts:Date.now()-7200e3,isSystem:true},
+    ];
+    saveChatDB(DB);
+  }
+
+  // Check admin
+  const dbUsers = [];
+  try { const d = JSON.parse(localStorage.getItem('nexus_db')||'{}'); dbUsers.push(...(d.users||[])); } catch {}
+  const me = dbUsers.find(u => u.id === session.id);
+  isAdmin = me?.role === 'admin' || session.role === 'admin';
+
+  renderNav();
+  renderSidebar();
+  renderMembers();
+  buildEmojiPicker();
+  buildIconPicker();
+  initFileAttach();
+  initCursor();
+
+  // Open first channel auto
+  if (DB.channels.length > 0) switchChannel(DB.channels[0].id);
+});
+
+// ═══════════════════════════════════
+//  NAV
+// ═══════════════════════════════════
+function renderNav() {
+  document.getElementById('sb-uname').textContent = session.pseudo;
+  // Avatar
+  const prof = JSON.parse(localStorage.getItem('nx_profile')||'{}');
+  if (prof.avatarSrc) {
+    document.getElementById('sb-av-img').src = prof.avatarSrc;
+    document.getElementById('sb-av-img').style.display = 'block';
+    document.getElementById('sb-av-letter').style.display = 'none';
+  } else {
+    document.getElementById('sb-av').style.background = avCol(session.pseudo);
+    document.getElementById('sb-av-letter').textContent = avLet(session.pseudo);
+  }
+  // Status
+  const statusColors = {online:'var(--green)',away:'var(--yellow)',dnd:'var(--accent2)',invisible:'var(--muted)'};
+  document.getElementById('sb-dot').style.background = statusColors[prof.statusType||'online'];
+  document.getElementById('sb-ustatus').textContent = prof.statusMsg || 'En ligne';
+  // Admin
+  if (isAdmin) {
+    document.getElementById('admin-badge').style.display = 'flex';
+    document.getElementById('admin-btn').style.display = 'inline-flex';
+  }
+  // Server name
+  document.getElementById('sb-server-name').textContent = DB.serverName || 'NEXUS';
+  document.getElementById('sb-member-count').textContent = (JSON.parse(localStorage.getItem('nexus_db')||'{}').users||[]).length + ' membres';
+}
+
+// ═══════════════════════════════════
+//  SIDEBAR
+// ═══════════════════════════════════
+function renderSidebar() {
+  const container = document.getElementById('sb-channels');
+  container.innerHTML = '';
+  // Group by category
+  const cats = {};
+  DB.channels.forEach(ch => {
+    const cat = ch.cat || 'general';
+    if (!cats[cat]) cats[cat] = [];
+    cats[cat].push(ch);
+  });
+  const catLabels = {general:'Général',discussion:'Discussion',fun:'Fun & Mèmes',gaming:'Gaming',custom:'Salons'};
+  Object.entries(cats).forEach(([cat, channels]) => {
+    const catDiv = document.createElement('div');
+    catDiv.innerHTML = `<div class="ch-category">${catLabels[cat]||cat.toUpperCase()}${isAdmin?`<button class="ch-add-btn" onclick="openAdmin();switchAdminTab('salons')" title="Ajouter un salon">＋</button>`:''}</div>`;
+    channels.forEach(ch => {
+      const item = document.createElement('div');
+      item.className = 'ch-item' + (activeChannel?.id === ch.id ? ' active' : '');
+      item.id = 'ch-item-' + ch.id;
+      const unread = getUnreadCount(ch.id);
+      item.innerHTML = `
+        <span class="ch-icon">${ch.icon||'#'}</span>
+        <span class="ch-name">${ch.name}</span>
+        ${unread > 0 ? `<span class="ch-unread">${unread}</span>` : ''}
+        ${isAdmin && !ch.pinned ? `<button class="ch-rm-btn" onclick="event.stopPropagation();confirmDeleteChannel('${ch.id}')" title="Supprimer">✕</button>` : ''}
+      `;
+      item.onclick = () => switchChannel(ch.id);
+      catDiv.appendChild(item);
+    });
+    container.appendChild(catDiv);
+  });
+}
+
+function getUnreadCount(chId) {
+  const msgs = DB.messages[chId] || [];
+  const lastRead = parseInt(localStorage.getItem('nx_lastread_' + chId) || '0');
+  return msgs.filter(m => m.ts > lastRead && m.userId !== session.id).length;
+}
+
+// ═══════════════════════════════════
+//  SWITCH CHANNEL
+// ═══════════════════════════════════
+function switchChannel(chId) {
+  const ch = DB.channels.find(c => c.id === chId);
+  if (!ch) return;
+  activeChannel = ch;
+  // Mark read
+  localStorage.setItem('nx_lastread_' + chId, Date.now());
+  // Nav
+  document.getElementById('nav-icon').textContent = ch.icon || '#';
+  document.getElementById('nav-chname').textContent = ch.name;
+  document.getElementById('nav-chdesc').textContent = ch.desc || '';
+  // Input placeholder
+  document.getElementById('msg-input').placeholder = `Message dans #${ch.name}…`;
+  // Show/hide based on access
+  const canWrite = ch.access !== 'admin' || isAdmin;
+  document.getElementById('input-zone').style.display = canWrite ? 'block' : 'none';
+  // Show chat
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('messages-wrap').style.display = 'flex';
+  // Sidebar
+  renderSidebar();
+  renderMessages();
+}
+
+// ═══════════════════════════════════
+//  MESSAGES
+// ═══════════════════════════════════
+function renderMessages() {
+  if (!activeChannel) return;
+  const msgs = DB.messages[activeChannel.id] || [];
+  const wrap = document.getElementById('messages-wrap');
+  wrap.innerHTML = '';
+  if (!msgs.length) {
+    wrap.innerHTML = `<div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:var(--muted);padding:40px;text-align:center;animation:fadeUp .3s ease both;">
+      <div style="font-size:44px;">${activeChannel.icon||'💬'}</div>
+      <div style="font-family:var(--fd);font-size:22px;letter-spacing:2px;color:var(--muted2);">DÉBUT DU SALON</div>
+      <div style="font-size:13px;">Sois le premier à écrire dans <strong>#${activeChannel.name}</strong> !</div>
+    </div>`;
+    return;
+  }
+  // Day separator
+  wrap.innerHTML += `<div class="day-sep">Aujourd'hui</div>`;
+  let lastUserId = null;
+  let lastTs = 0;
+  msgs.forEach(msg => {
+    const isCont = msg.userId === lastUserId && (msg.ts - lastTs) < 5*60*1000 && !msg.isSystem;
+    const el = document.createElement('div');
+    if (isCont && !msg.isSystem) {
+      el.className = 'msg-cont';
+      el.innerHTML = `
+        <div class="spacer"></div>
+        <div class="msg-text">${formatMsg(msg.text)}${msg.imgSrc?`<div class="msg-img-wrap"><img src="${msg.imgSrc}" alt="image"></div>`:''}</div>
+        ${isAdmin&&!msg.isSystem?`<div class="msg-actions"><button class="msg-act" onclick="deleteMsg('${msg.id}')" title="Supprimer">🗑️</button></div>`:''}
+      `;
+    } else {
+      el.className = 'msg-group';
+      const time = new Date(msg.ts).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+      const avBg = msg.isSystem ? 'linear-gradient(135deg,#00e5ff,#00ff9d)' : avCol(msg.pseudo);
+      const avContent = msg.avatarSrc
+        ? `<img src="${msg.avatarSrc}" alt="">`
+        : `<span>${avLet(msg.pseudo)}</span>`;
+      el.innerHTML = `
+        <div class="msg-av" style="background:${msg.isSystem?'linear-gradient(135deg,#00e5ff,#00ff9d)':avBg};" data-pseudo="${esc(msg.pseudo)}">${avContent}</div>
+        <div class="msg-body">
+          <div class="msg-meta">
+            <span class="msg-author${msg.isAdmin?' is-admin':''}" data-pseudo="${esc(msg.pseudo)}">${esc(msg.pseudo)}</span>
+            <span class="msg-time">${time}</span>
+          </div>
+          <div class="msg-text">${formatMsg(msg.text)}${msg.imgSrc?`<div class="msg-img-wrap"><img src="${msg.imgSrc}" alt="image"></div>`:''}</div>
+          ${getReactionsHTML(msg.id)}
+        </div>
+        ${isAdmin&&!msg.isSystem?`<div class="msg-actions"><button class="msg-act" onclick="deleteMsg('${msg.id}')" title="Supprimer">🗑️</button><button class="msg-act" onclick="toast('Réponse — bientôt !')" title="Répondre">↩️</button></div>`:''}
+      `;
+    }
+    wrap.appendChild(el);
+    lastUserId = msg.userId;
+    lastTs = msg.ts;
+  });
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function formatMsg(text) {
+  if (!text) return '';
+  return esc(text)
+    .replace(/@(\w+)/g,'<span class="mention">@$1</span>')
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g,'<em>$1</em>')
+    .replace(/`(.*?)`/g,'<code style="background:var(--bg3);padding:1px 5px;border-radius:4px;font-size:13px;">$1</code>');
+}
+
+function getReactionsHTML(msgId) {
+  const reactions = DB.reactions?.[msgId] || {};
+  const entries = Object.entries(reactions);
+  if (!entries.length) return '';
+  return '<div style="display:flex;gap:5px;margin-top:4px;flex-wrap:wrap;">' +
+    entries.map(([emoji, users]) => `
+      <div class="msg-react" onclick="addReaction('${msgId}','${emoji}')">
+        ${emoji} <span style="font-size:11px;color:var(--muted2);">${users.length}</span>
+      </div>`).join('') +
+    '</div>';
+}
+
+// ═══════════════════════════════════
+//  SEND MESSAGE
+// ═══════════════════════════════════
+function sendMsg(imgSrc) {
+  const input = document.getElementById('msg-input');
+  const text = input.value.trim();
+  if (!text && !imgSrc) return;
+  if (!activeChannel) { toast('Sélectionne un salon !'); return; }
+  if (activeChannel.access === 'admin' && !isAdmin) { toast('Salon réservé aux admins !'); return; }
+  const prof = JSON.parse(localStorage.getItem('nx_profile') || '{}');
+  const msg = {
+    id: 'm' + Date.now(),
+    userId: session.id,
+    pseudo: session.pseudo,
+    text: text || '',
+    imgSrc: imgSrc || null,
+    ts: Date.now(),
+    isAdmin,
+    avatarSrc: prof.avatarSrc || null,
+  };
+  if (!DB.messages[activeChannel.id]) DB.messages[activeChannel.id] = [];
+  DB.messages[activeChannel.id].push(msg);
+  saveChatDB(DB);
+  input.value = '';
+  document.getElementById('send-btn').disabled = true;
+  renderMessages();
+  stopTyping();
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
+}
+
+function handleTyping() {
+  const val = document.getElementById('msg-input').value;
+  document.getElementById('send-btn').disabled = !val.trim();
+  clearTimeout(typingTimer);
+  typingTimer = setTimeout(stopTyping, 2000);
+}
+
+function stopTyping() { clearTimeout(typingTimer); }
+
+// ═══════════════════════════════════
+//  DELETE MESSAGE (admin)
+// ═══════════════════════════════════
+function deleteMsg(msgId) {
+  if (!isAdmin) return;
+  document.getElementById('del-sub').textContent = 'Supprimer ce message définitivement ?';
+  document.getElementById('del-ok-btn').onclick = () => {
+    if (!DB.messages[activeChannel.id]) return;
+    DB.messages[activeChannel.id] = DB.messages[activeChannel.id].filter(m => m.id !== msgId);
+    saveChatDB(DB);
+    document.getElementById('del-confirm').classList.remove('on');
+    renderMessages();
+    toast('Message supprimé.');
+  };
+  document.getElementById('del-confirm').classList.add('on');
+}
+
+// ═══════════════════════════════════
+//  REACTIONS
+// ═══════════════════════════════════
+function addReaction(msgId, emoji) {
+  if (!DB.reactions) DB.reactions = {};
+  if (!DB.reactions[msgId]) DB.reactions[msgId] = {};
+  if (!DB.reactions[msgId][emoji]) DB.reactions[msgId][emoji] = [];
+  const arr = DB.reactions[msgId][emoji];
+  const idx = arr.indexOf(session.id);
+  if (idx > -1) arr.splice(idx, 1);
+  else arr.push(session.id);
+  if (!arr.length) delete DB.reactions[msgId][emoji];
+  saveChatDB(DB);
+  renderMessages();
+}
+
+// ═══════════════════════════════════
+//  FILE ATTACH
+// ═══════════════════════════════════
+function initFileAttach() {
+  document.getElementById('file-attach').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { toast('⚠️ Max 5MB'); return; }
+    const r = new FileReader();
+    r.onload = ev => sendMsg(ev.target.result);
+    r.readAsDataURL(file);
+    e.target.value = '';
+  });
+}
+
+// ═══════════════════════════════════
+//  EMOJI PICKER
+// ═══════════════════════════════════
+function buildEmojiPicker() {
+  const picker = document.getElementById('emoji-picker');
+  picker.innerHTML = EMOJIS.map(e => `<button class="ep-em" onclick="insertEmoji('${e}')">${e}</button>`).join('');
+}
+
+function toggleEmojiPicker() {
+  emojiOpen = !emojiOpen;
+  document.getElementById('emoji-picker').classList.toggle('on', emojiOpen);
+}
+
+function insertEmoji(e) {
+  const input = document.getElementById('msg-input');
+  input.value += e;
+  input.focus();
+  document.getElementById('send-btn').disabled = !input.value.trim();
+  toggleEmojiPicker();
+}
+
+document.addEventListener('click', e => {
+  if (emojiOpen && !e.target.closest('#emoji-picker') && !e.target.closest('.input-btn')) {
+    emojiOpen = false;
+    document.getElementById('emoji-picker').classList.remove('on');
+  }
+});
+
+// ═══════════════════════════════════
+//  MEMBERS PANEL
+// ═══════════════════════════════════
+function renderMembers() {
+  const db = JSON.parse(localStorage.getItem('nexus_db') || '{"users":[]}');
+  const users = db.users || [];
+  const list = document.getElementById('members-list');
+  const online = [session, ...users.filter(u => u.id !== session.id).slice(0, 4)];
+  const offline = users.filter(u => u.id !== session.id).slice(4);
+  let html = `<div class="members-cat">EN LIGNE — ${online.length}</div>`;
+  online.forEach(u => {
+    const isMe = u.id === session.id;
+    const uIsAdmin = u.role === 'admin' || (isMe && isAdmin);
+    const prof = isMe ? JSON.parse(localStorage.getItem('nx_profile') || '{}') : {};
+    const avBg = prof.avatarSrc ? 'none' : avCol(u.pseudo);
+    const avContent = (isMe && prof.avatarSrc)
+      ? `<img src="${prof.avatarSrc}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
+      : avLet(u.pseudo);
+    html += `<div class="member-row" data-pseudo="${u.pseudo}">
+      <div class="member-av" style="background:${avBg};">${avContent}<div class="member-dot" style="background:var(--green);"></div></div>
+      <div class="member-name${uIsAdmin?' is-admin':''}">${esc(u.pseudo)}${isMe?' (Toi)':''}</div>
+      ${uIsAdmin?'<span class="member-badge" style="background:rgba(255,61,113,.12);color:var(--accent2);">Admin</span>':''}
+    </div>`;
+  });
+  if (offline.length) {
+    html += `<div class="members-cat">HORS LIGNE — ${offline.length}</div>`;
+    offline.forEach(u => {
+      html += `<div class="member-row" style="opacity:.4;" data-pseudo="${u.pseudo}">
+        <div class="member-av" style="background:${avCol(u.pseudo)};">${avLet(u.pseudo)}<div class="member-dot" style="background:var(--muted);"></div></div>
+        <div class="member-name">${esc(u.pseudo)}</div>
+      </div>`;
+    });
+  }
+  list.innerHTML = html;
+}
+
+// ═══════════════════════════════════
+//  ADMIN PANEL
+// ═══════════════════════════════════
+function openAdmin() {
+  if (!isAdmin) { toast('Accès réservé aux admins !'); return; }
+  document.getElementById('admin-panel').classList.add('on');
+  document.getElementById('server-name-input').value = DB.serverName || '';
+  document.getElementById('server-desc-input').value = DB.serverDesc || '';
+  renderAdminChannels();
+  renderAdminMembers();
+}
+function closeAdmin() { document.getElementById('admin-panel').classList.remove('on'); }
+function closeAdminOutside(e) { if (e.target === document.getElementById('admin-panel')) closeAdmin(); }
+
+function switchAdminTab(tab) {
+  document.querySelectorAll('.admin-tab').forEach((t,i) => t.classList.toggle('active', ['salons','membres','serveur'][i] === tab));
+  document.querySelectorAll('.atab-content').forEach(c => c.classList.remove('on'));
+  document.getElementById('atab-' + tab).classList.add('on');
+}
+
+function renderAdminChannels() {
+  const list = document.getElementById('admin-ch-list');
+  list.innerHTML = DB.channels.map(ch => `
+    <div class="ch-admin-item">
+      <div class="ch-admin-icon">${ch.icon}</div>
+      <div class="ch-admin-info">
+        <div class="ch-admin-name">#${ch.name}</div>
+        <div class="ch-admin-desc">${ch.desc||'Aucune description'} · ${(DB.messages[ch.id]||[]).length} messages</div>
+      </div>
+      <div class="ch-admin-btns">
+        ${!ch.pinned ? `<button class="ch-admin-btn" style="background:rgba(255,61,113,.12);color:var(--accent2);" onclick="confirmDeleteChannel('${ch.id}')">🗑️ Suppr.</button>` : `<span style="font-size:11px;color:var(--muted);padding:5px 8px;">📌 Épinglé</span>`}
+      </div>
+    </div>`).join('');
+}
+
+function renderAdminMembers() {
+  const db = JSON.parse(localStorage.getItem('nexus_db') || '{"users":[]}');
+  const users = db.users || [];
+  const list = document.getElementById('admin-member-list');
+  if (!users.length) { list.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">Aucun membre inscrit.</div>'; return; }
+  list.innerHTML = users.map(u => `
+    <div class="member-admin-item">
+      <div class="member-admin-av" style="background:${avCol(u.pseudo)};">${avLet(u.pseudo)}</div>
+      <div class="member-admin-info">
+        <div class="member-admin-name nx-user" data-pseudo="${esc(u.pseudo)}" style="cursor:pointer;">${esc(u.pseudo)}</div>
+        <div class="member-admin-sub">${u.email} · Rejoint le ${new Date(u.joined||Date.now()).toLocaleDateString('fr-FR')}</div>
+      </div>
+      <select class="role-select" onchange="changeRole('${u.id}',this.value)">
+        <option value="user" ${(u.role||'user')==='user'?'selected':''}>Membre</option>
+        <option value="admin" ${u.role==='admin'?'selected':''}>Admin</option>
+      </select>
+    </div>`).join('');
+}
+
+function changeRole(userId, role) {
+  const db = JSON.parse(localStorage.getItem('nexus_db') || '{"users":[]}');
+  const idx = db.users.findIndex(u => u.id === userId);
+  if (idx > -1) { db.users[idx].role = role; localStorage.setItem('nexus_db', JSON.stringify(db)); }
+  toast(role === 'admin' ? '👑 Rôle Admin attribué !' : '✅ Rôle mis à jour.');
+}
+
+// ═══════════════════════════════════
+//  CHANNELS CRUD
+// ═══════════════════════════════════
+function buildIconPicker() {
+  const picker = document.getElementById('icon-picker');
+  picker.innerHTML = ICONS.map(ic => `
+    <div class="icon-opt${ic === selectedIcon ? ' sel' : ''}" onclick="selectIcon('${ic}')">${ic}</div>`).join('');
+}
+function selectIcon(ic) {
+  selectedIcon = ic;
+  document.querySelectorAll('.icon-opt').forEach((el, i) => el.classList.toggle('sel', ICONS[i] === ic));
+}
+
+function createChannel() {
+  const name = document.getElementById('new-ch-name').value.trim().toLowerCase().replace(/\s+/g, '-');
+  const type = document.getElementById('new-ch-type').value;
+  const desc = document.getElementById('new-ch-desc').value.trim();
+  const access = document.getElementById('new-ch-access').value;
+  const cat = document.getElementById('new-ch-cat').value;
+  if (!name) { toast('⚠️ Donne un nom au salon !'); return; }
+  if (DB.channels.find(c => c.name === name)) { toast('⚠️ Ce salon existe déjà !'); return; }
+  const ch = {
+    id: 'ch_' + Date.now(),
+    name, type, desc, access, cat,
+    icon: selectedIcon,
+    pinned: false,
+  };
+  DB.channels.push(ch);
+  saveChatDB(DB);
+  document.getElementById('new-ch-name').value = '';
+  document.getElementById('new-ch-desc').value = '';
+  renderAdminChannels();
+  renderSidebar();
+  toast('✅ Salon #' + name + ' créé !');
+}
+
+function confirmDeleteChannel(chId) {
+  const ch = DB.channels.find(c => c.id === chId);
+  if (!ch) return;
+  document.getElementById('del-sub').textContent = `Supprimer #${ch.name} ? Tous les messages (${(DB.messages[ch.id]||[]).length}) seront perdus.`;
+  document.getElementById('del-ok-btn').onclick = () => {
+    DB.channels = DB.channels.filter(c => c.id !== chId);
+    delete DB.messages[chId];
+    saveChatDB(DB);
+    document.getElementById('del-confirm').classList.remove('on');
+    if (activeChannel?.id === chId) {
+      activeChannel = null;
+      document.getElementById('welcome').style.display = '';
+      document.getElementById('messages-wrap').style.display = 'none';
+      document.getElementById('input-zone').style.display = 'none';
+      document.getElementById('nav-chname').textContent = 'Choisir un salon';
+      document.getElementById('nav-chdesc').textContent = '';
+    }
+    renderAdminChannels();
+    renderSidebar();
+    toast('🗑️ Salon supprimé.');
+  };
+  document.getElementById('del-confirm').classList.add('on');
+}
+
+function saveServerSettings() {
+  DB.serverName = document.getElementById('server-name-input').value.trim() || 'Nexus Central';
+  DB.serverDesc = document.getElementById('server-desc-input').value.trim();
+  saveChatDB(DB);
+  document.getElementById('sb-server-name').textContent = DB.serverName;
+  toast('✅ Paramètres sauvegardés !');
+  closeAdmin();
+}
+
+// ═══════════════════════════════════
+//  AUTH
+// ═══════════════════════════════════
+function doLogout() {
+  localStorage.removeItem('nx_s');
+  sessionStorage.removeItem('nx_s');
+  localStorage.removeItem('nexus_session');
+  sessionStorage.removeItem('nexus_session');
+  window.location.href = 'nexus-home.html';
+}
+
+// ═══════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+let _tt;
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('on');
+  clearTimeout(_tt); _tt = setTimeout(() => t.classList.remove('on'), 2800);
+}
+
+// ═══════════════════════════════════
+//  CURSOR
+// ═══════════════════════════════════
+function initCursor() {
+  const cur = document.getElementById('cur'), ring = document.getElementById('cur-ring');
+  let mx=0,my=0,rx=0,ry=0;
+  document.addEventListener('mousemove', e => { mx=e.clientX; my=e.clientY; });
+  (function a(){ cur.style.transform=`translate3d(${mx}px,${my}px,0) translate(-50%,-50%)`; rx+=(mx-rx)*.18; ry+=(my-ry)*.18; ring.style.transform=`translate3d(${rx}px,${ry}px,0) translate(-50%,-50%)`; requestAnimationFrame(a); })();
+  document.addEventListener('mouseover', e => {
+    if (e.target.matches('button,input,textarea,.ch-item,.member-row,.msg-av,.quiz-card,.hub-card,.ep-em,.icon-opt')) {
+      cur.style.width='14px'; cur.style.height='14px'; ring.style.width='50px'; ring.style.height='50px';
+    } else {
+      cur.style.width='9px'; cur.style.height='9px'; ring.style.width='32px'; ring.style.height='32px';
+    }
+  });
+}
+</script>
+<script src="nexus-user-popup.js"></script>
+</body>
+</html>
