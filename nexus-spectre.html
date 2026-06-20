@@ -403,7 +403,7 @@ document.addEventListener('keydown',e=>{
 });
 
 // ═══ PEER HELPERS ═══
-function genCode(){const c='ABCDEFGHJKMNPQRSTUVWXYZ23456789';let s='nx-sp-';for(let i=0;i<6;i++)s+=c[Math.floor(Math.random()*c.length)];return s;}
+function genCode(){const c='abcdefghjkmnpqrstuvwxyz23456789';let s='nx-sp-';for(let i=0;i<6;i++)s+=c[Math.floor(Math.random()*c.length)];return s;}
 function initPeer(id){
   return new Promise((res,rej)=>{
     peer=new Peer(id||undefined,{debug:0});
