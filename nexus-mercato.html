@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus — Mercato</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<style>
+:root{
+  --bg:#070810;--bg2:#0e0f1a;--bg3:#15172a;--bg4:#1c1f38;
+  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.14);
+  --white:#f0f2ff;--muted:#555878;--muted2:#7a7e9a;
+  --c:#00e5ff;--p:#a855f7;--g:#00ff9d;--y:#ffe600;--r:#ff3d71;--o:#ff8c00;
+  --gold:#ffd700;
+  --fd:'Bebas Neue',sans-serif;--fb:'Outfit',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--fb);background:var(--bg);color:var(--white);min-height:100vh;overflow-x:hidden;cursor:none;}
+#cur{width:10px;height:10px;background:var(--white);border-radius:50%;position:fixed;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);will-change:transform;mix-blend-mode:difference;transition:width .18s,height .18s;}
+#cur-ring{width:34px;height:34px;border:1px solid rgba(255,255,255,.25);border-radius:50%;position:fixed;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);will-change:transform;transition:width .22s,height .22s;}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.02'/%3E%3C/svg%3E");pointer-events:none;z-index:0;}
+nav{position:sticky;top:0;z-index:200;height:58px;display:flex;align-items:center;padding:0 28px;background:rgba(7,8,16,.9);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);gap:12px;}
+.logo{font-family:var(--fd);font-size:26px;letter-spacing:4px;background:linear-gradient(90deg,var(--gold),var(--o));-webkit-background-clip:text;-webkit-text-fill-color:transparent;cursor:pointer;}
+.back-btn{padding:6px 14px;border-radius:8px;background:none;border:1px solid var(--border);color:var(--muted);font-family:var(--fb);font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;}
+.back-btn:hover{color:var(--white);border-color:var(--border2);}
+.conn-pill{margin-left:auto;display:none;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.2);font-size:11px;font-weight:700;color:var(--gold);}
+.conn-pill.show{display:flex;}
+.conn-dot{width:7px;height:7px;border-radius:50%;background:var(--gold);animation:blink 1.5s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+main{position:relative;z-index:1;max-width:860px;margin:0 auto;padding:44px 22px 90px;}
+.scr{display:none;animation:fadeUp .4s ease both;}
+.scr.on{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.hero{text-align:center;margin-bottom:30px;}
+.hero-title{font-family:var(--fd);font-size:clamp(48px,9vw,86px);letter-spacing:6px;line-height:.9;margin-bottom:10px;}
+.ht1{display:block;color:var(--white);}
+.ht2{display:block;background:linear-gradient(90deg,var(--gold),var(--o),var(--r));background-size:200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:gs 5s linear infinite;}
+@keyframes gs{0%{background-position:0%}100%{background-position:200%}}
+.hero-sub{font-size:14px;color:var(--muted2);font-weight:300;max-width:500px;margin:0 auto;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:20px;margin-bottom:14px;}
+.card-title{font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--muted2);margin-bottom:12px;}
+.f-input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:10px 13px;color:var(--white);font-family:var(--fb);font-size:14px;outline:none;transition:border-color .2s;}
+.f-input:focus{border-color:var(--c);}
+.big-btn{width:100%;padding:15px;border-radius:13px;border:none;background:linear-gradient(135deg,var(--gold),var(--o));color:#070810;font-family:var(--fd);font-size:19px;letter-spacing:2px;cursor:pointer;transition:all .2s;margin-top:4px;}
+.big-btn:hover{transform:translateY(-2px);box-shadow:0 14px 36px rgba(255,215,0,.2);}
+.big-btn:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none;}
+.ghost-btn{padding:10px 20px;border-radius:11px;border:1px solid var(--border);background:none;color:var(--muted2);font-family:var(--fb);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;}
+.ghost-btn:hover{color:var(--white);border-color:var(--border2);}
+.danger-btn{padding:8px 16px;border-radius:9px;border:1px solid rgba(255,61,113,.3);background:rgba(255,61,113,.08);color:var(--r);font-family:var(--fb);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;}
+.danger-btn:hover{background:rgba(255,61,113,.15);}
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.mode-card{background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:24px 18px;text-align:center;cursor:pointer;transition:all .25s cubic-bezier(.34,1.2,.64,1);}
+.mode-card:hover{transform:translateY(-5px);border-color:rgba(255,215,0,.3);box-shadow:0 20px 60px rgba(0,0,0,.4);}
+.mode-card .mi{font-size:38px;margin-bottom:10px;}
+.mode-card .mt{font-family:var(--fd);font-size:20px;letter-spacing:2px;margin-bottom:5px;}
+.mode-card .ms{font-size:12px;color:var(--muted2);line-height:1.5;}
+.lobby-code-box{font-family:var(--fd);font-size:50px;letter-spacing:10px;background:var(--bg3);border:2px dashed rgba(255,215,0,.35);border-radius:14px;padding:16px;margin:14px 0;color:var(--gold);word-break:break-all;text-align:center;}
+.spinner{width:32px;height:32px;border:3px solid var(--bg4);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;margin:16px auto;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.player-list-lobby{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
+.player-lobby-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg3);border-radius:10px;border:1px solid var(--border);}
+.char-list{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;max-height:280px;overflow-y:auto;}
+.char-row{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg3);border-radius:10px;border:1px solid var(--border);animation:fadeUp .2s ease both;}
+.char-row-emoji{font-size:22px;width:32px;text-align:center;flex-shrink:0;}
+.char-row-img{width:32px;height:32px;border-radius:8px;object-fit:cover;flex-shrink:0;border:1px solid var(--border);}
+.char-row-name{flex:1;font-size:14px;font-weight:600;}
+.char-row-cat{font-size:11px;color:var(--muted2);}
+/* Budget row */
+.budget-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+.budget-item{flex:1;min-width:120px;background:var(--bg2);border:1px solid var(--border);border-radius:13px;padding:12px 14px;}
+.budget-item.active-bidder{border-color:var(--gold);background:rgba(255,215,0,.04);}
+.budget-label{font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted2);margin-bottom:4px;}
+.budget-val{font-family:var(--fd);font-size:24px;letter-spacing:1px;}
+.budget-bar-wrap{height:4px;background:var(--bg4);border-radius:2px;margin-top:6px;overflow:hidden;}
+.budget-bar{height:100%;border-radius:2px;transition:width .5s,background .3s;}
+/* Teams */
+.teams-grid{display:grid;gap:10px;margin-bottom:16px;}
+.team-block{}
+.team-block-title{font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted2);margin-bottom:8px;}
+.team-slots{display:flex;gap:6px;flex-wrap:wrap;}
+.team-slot{background:var(--bg3);border:1px dashed rgba(255,255,255,.1);border-radius:11px;padding:8px 6px;text-align:center;width:70px;min-height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:all .3s;flex-shrink:0;}
+.team-slot.filled{border-style:solid;border-color:rgba(255,215,0,.25);background:rgba(255,215,0,.04);}
+.team-slot-emoji{font-size:20px;margin-bottom:3px;}
+.team-slot-img{width:38px;height:38px;border-radius:9px;object-fit:cover;margin-bottom:3px;border:1px solid rgba(255,215,0,.2);}
+.team-slot-name{font-size:9px;font-weight:600;line-height:1.3;word-break:break-word;}
+.team-slot-price{font-size:8px;color:var(--gold);font-weight:700;margin-top:1px;}
+.team-slot-bm{font-size:12px;margin-top:1px;}
+.team-slot-empty{font-size:22px;opacity:.2;}
+/* Auction */
+.auction-card{background:linear-gradient(135deg,rgba(255,215,0,.08),rgba(255,140,0,.04));border:2px solid rgba(255,215,0,.2);border-radius:20px;padding:24px 20px;margin-bottom:18px;position:relative;overflow:hidden;text-align:center;}
+.auction-card::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(255,215,0,.07),transparent 70%);pointer-events:none;}
+.auction-emoji{font-size:60px;margin-bottom:10px;animation:pop .4s cubic-bezier(.34,1.5,.64,1) both;}
+.auction-img{width:110px;height:110px;border-radius:16px;object-fit:cover;margin:0 auto 10px;display:block;border:2px solid rgba(255,215,0,.25);animation:pop .4s cubic-bezier(.34,1.5,.64,1) both;}
+@keyframes pop{from{transform:scale(0);opacity:0;}to{transform:scale(1);opacity:1;}}
+.auction-name{font-family:var(--fd);font-size:clamp(26px,5vw,46px);letter-spacing:3px;margin-bottom:4px;}
+.auction-cat{font-size:12px;color:var(--muted2);font-weight:600;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;}
+.auction-num{font-size:11px;color:var(--muted2);font-weight:700;letter-spacing:1px;text-transform:uppercase;}
+/* Bid turn info */
+.turn-banner{text-align:center;padding:10px 14px;border-radius:12px;margin-bottom:14px;font-size:13px;font-weight:700;border:1px solid var(--border);}
+.turn-banner.my-turn{background:rgba(255,215,0,.08);border-color:rgba(255,215,0,.25);color:var(--gold);}
+.turn-banner.wait{background:rgba(255,255,255,.04);color:var(--muted2);}
+/* Bid display */
+.bid-display{background:var(--bg3);border:1px solid rgba(255,215,0,.2);border-radius:14px;padding:14px;text-align:center;margin-bottom:14px;}
+.bid-amount{font-family:var(--fd);font-size:48px;letter-spacing:2px;color:var(--gold);line-height:1;}
+.bid-label{font-size:11px;color:var(--muted2);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-top:4px;}
+.bid-by{font-size:12px;color:var(--muted2);margin-top:4px;}
+/* Raise buttons */
+.raise-btns{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;}
+.raise-btn{padding:8px 14px;border-radius:9px;border:1px solid rgba(255,215,0,.2);background:rgba(255,215,0,.07);color:var(--gold);font-family:var(--fd);font-size:15px;letter-spacing:1px;cursor:pointer;transition:all .15s;}
+.raise-btn:hover:not(:disabled){background:rgba(255,215,0,.15);transform:translateY(-1px);}
+.raise-btn:disabled{opacity:.3;cursor:not-allowed;}
+.bid-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+/* Force / sold banner */
+.forced-banner{background:rgba(255,61,113,.08);border:1px solid rgba(255,61,113,.25);border-radius:12px;padding:14px;text-align:center;margin-bottom:14px;font-size:13px;color:var(--r);line-height:1.6;}
+.bm-reveal{border-radius:14px;padding:16px;text-align:center;animation:pop .4s cubic-bezier(.34,1.5,.64,1) both;}
+.bm-reveal.bonus{background:rgba(0,255,157,.08);border:1px solid rgba(0,255,157,.3);}
+.bm-reveal.malus{background:rgba(255,61,113,.08);border:1px solid rgba(255,61,113,.3);}
+.bm-reveal-icon{font-size:28px;margin-bottom:6px;}
+.bm-reveal-label{font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;}
+.bm-reveal-txt{font-size:15px;font-weight:700;}
+.bm-reveal-money{font-size:13px;margin-top:4px;font-weight:700;}
+.wheel-wrap{position:relative;width:230px;height:230px;margin:6px auto 18px;}
+.wheel-pointer{position:absolute;top:-6px;left:50%;transform:translateX(-50%);font-size:26px;z-index:3;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5));}
+.wheel-disc{width:100%;height:100%;border-radius:50%;position:relative;border:4px solid rgba(255,215,0,.5);box-shadow:0 0 0 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.5);overflow:hidden;}
+.wheel-seg-label{position:absolute;top:50%;left:50%;width:50%;height:2px;transform-origin:0 0;display:flex;align-items:center;pointer-events:none;}
+.wheel-seg-label span{display:inline-block;font-size:10px;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.8);max-width:64px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:14px;}
+.wheel-hub{position:absolute;top:50%;left:50%;width:26px;height:26px;margin:-13px;border-radius:50%;background:var(--gold);border:3px solid var(--bg1);z-index:2;box-shadow:0 2px 8px rgba(0,0,0,.5);}
+.wheel-name{text-align:center;font-family:var(--fd);font-size:14px;letter-spacing:1px;color:var(--gold);margin-bottom:4px;text-transform:uppercase;}
+.seg-builder-row{display:flex;gap:6px;margin-bottom:8px;align-items:center;}
+.seg-builder-list{display:flex;flex-direction:column;gap:6px;margin-bottom:10px;}
+.seg-chip{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:9px;background:var(--bg3);border:1px solid var(--border);font-size:12px;}
+.seg-chip .sc-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+/* Sold */
+.sold-banner{text-align:center;padding:24px;background:linear-gradient(135deg,rgba(255,215,0,.1),rgba(255,140,0,.06));border:2px solid rgba(255,215,0,.25);border-radius:18px;margin-bottom:16px;}
+.sold-icon{font-size:52px;margin-bottom:8px;animation:pop .4s cubic-bezier(.34,1.5,.64,1) both;}
+.sold-img{width:88px;height:88px;border-radius:14px;object-fit:cover;margin:0 auto 8px;display:block;border:2px solid rgba(255,215,0,.25);animation:pop .4s cubic-bezier(.34,1.5,.64,1) both;}
+.sold-to{font-family:var(--fd);font-size:32px;letter-spacing:3px;margin-bottom:4px;}
+/* Final */
+.final-teams{display:grid;gap:12px;margin-bottom:22px;}
+.final-team-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:16px;}
+.final-team-title{font-family:var(--fd);font-size:18px;letter-spacing:2px;margin-bottom:10px;text-align:center;}
+.final-char-list{display:flex;flex-direction:column;gap:5px;}
+.final-char-item{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg3);border-radius:9px;flex-wrap:wrap;}
+.final-char-emoji{font-size:18px;width:24px;text-align:center;}
+.final-char-img{width:26px;height:26px;border-radius:6px;object-fit:cover;flex-shrink:0;border:1px solid var(--border);}
+.final-char-name{flex:1;font-size:13px;font-weight:600;}
+.final-char-price{font-size:11px;color:var(--gold);font-weight:700;}
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--bg3);border:1px solid var(--gold);color:var(--white);padding:10px 22px;border-radius:30px;font-size:13px;font-weight:500;z-index:9000;transition:transform .3s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;}
+#toast.on{transform:translateX(-50%) translateY(0);}
+::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:4px;}
+@media(max-width:580px){.mode-grid{grid-template-columns:1fr;}.bid-actions{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div id="cur"></div><div id="cur-ring"></div>
+<nav>
+  <div class="logo" onclick="window.location.href='nexus-home.html'">NEXUS</div>
+  <button class="back-btn" onclick="leaveGame()">← Jeux</button>
+  <div class="conn-pill" id="conn-pill"><div class="conn-dot"></div><span id="conn-txt">Connecté</span></div>
+</nav>
+<main>
+
+<!-- MODE -->
+<div class="scr on" id="scr-mode">
+  <div class="hero">
+    <h1 class="hero-title"><span class="ht1">MER-</span><span class="ht2">CATO</span></h1>
+    <p class="hero-sub">500€ chacun, 5 personnages à recruter. À tour de rôle, enchéris pour recruter les meilleurs ! Jusqu'à 6 joueurs en ligne.</p>
+  </div>
+  <div class="mode-grid">
+    <div class="mode-card" onclick="goCreate()">
+      <div class="mi">⚽</div>
+      <div class="mt">CRÉER UNE PARTIE</div>
+      <div class="ms">Configure les personnages, les bonus/malus et partage le code à tes amis.</div>
+    </div>
+    <div class="mode-card" onclick="showScreen('scr-join')">
+      <div class="mi">🔑</div>
+      <div class="mt">REJOINDRE</div>
+      <div class="ms">Ton ami a créé une partie ? Entre son code pour rejoindre les enchères.</div>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE -->
+<div class="scr" id="scr-create">
+  <div class="hero" style="margin-bottom:18px;">
+    <h1 class="hero-title" style="font-size:clamp(34px,6vw,56px);"><span class="ht1">CRÉER</span><span class="ht2">UNE PARTIE</span></h1>
+  </div>
+  <div class="card">
+    <label class="f-label">Ton pseudo</label>
+    <input class="f-input" id="c-name" placeholder="Ton pseudo" maxlength="16">
+  </div>
+
+  <!-- CHAR LIST -->
+  <div class="card" id="saved-lists-card" style="display:none;">
+    <div class="card-title">📂 Mes listes sauvegardées</div>
+    <div id="saved-lists-container" style="display:flex;flex-direction:column;gap:6px;"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">🎭 Personnages (min. 10)</div>
+    <div style="display:flex;gap:8px;margin-bottom:8px;">
+      <input class="f-input" id="char-name-input" placeholder="Nom du personnage…" maxlength="40" style="flex:2;">
+      <input class="f-input" id="char-cat-input" placeholder="Catégorie" maxlength="20" style="flex:1;">
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;">
+      <input class="f-input" id="char-img-url-input" placeholder="🔗 Lien image (optionnel)…" style="flex:1;">
+      <button class="ghost-btn" onclick="document.getElementById('char-img-file-input').click()" title="Upload">📁</button>
+      <input type="file" id="char-img-file-input" accept="image/*" style="display:none;" onchange="handleImgFile(event)">
+      <div id="char-img-preview-wrap" style="display:none;width:34px;height:34px;border-radius:8px;overflow:hidden;flex-shrink:0;border:1px solid var(--border);"><img id="char-img-preview" style="width:100%;height:100%;object-fit:cover;"></div>
+      <button class="danger-btn" id="char-img-clear-btn" style="display:none;padding:6px 10px;" onclick="clearPendingImg()">✕</button>
+    </div>
+    <button class="ghost-btn" onclick="addChar()" style="width:100%;margin-bottom:12px;">＋ Ajouter le personnage</button>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;" id="quick-cats">
+      <span style="font-size:11px;color:var(--muted2);align-self:center;">Catégorie :</span>
+    </div>
+    <div class="char-list" id="char-list"></div>
+    <div style="font-size:12px;color:var(--muted2);margin-top:6px;" id="char-count-txt"></div>
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <input class="f-input" id="save-list-name" placeholder="Nom de cette liste…" style="flex:1;">
+      <button class="ghost-btn" onclick="saveCurrentList()" style="white-space:nowrap;">💾 Sauvegarder</button>
+    </div>
+  </div>
+
+  <!-- BONUS/MALUS -->
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+      <input type="checkbox" id="bm-enable-toggle" onchange="toggleBM()" style="width:18px;height:18px;accent-color:var(--gold);cursor:pointer;">
+      <label for="bm-enable-toggle" class="card-title" style="margin-bottom:0;cursor:pointer;">🎲 Bonus / Malus surprise (optionnel)</label>
+    </div>
+    <div id="bm-content" style="display:none;">
+      <p style="font-size:12px;color:var(--muted2);margin-bottom:10px;line-height:1.6;">70% de chance qu'un bonus/malus soit révélé à l'achat d'un personnage.</p>
+      <div id="bm-saved-lists-card" style="display:none;margin-bottom:12px;">
+        <div class="card-title" style="font-size:10px;">📂 Mes listes bonus/malus</div>
+        <div id="bm-saved-lists-container" style="display:flex;flex-direction:column;gap:6px;"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <input class="f-input" id="bm-text-input" placeholder="Ex : Jambe cassée, Charismatique…" maxlength="60" style="flex:2;">
+        <select class="f-input" id="bm-type-select" style="flex:1;cursor:pointer;"><option value="bonus">✨ Bonus</option><option value="malus">💀 Malus</option></select>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
+        <label style="font-size:12px;color:var(--muted2);display:flex;align-items:center;gap:6px;flex-shrink:0;cursor:pointer;">
+          <input type="checkbox" id="bm-money-toggle" onchange="document.getElementById('bm-money-input').style.display=this.checked?'block':'none'" style="accent-color:var(--gold);">Effet budget
+        </label>
+        <input class="f-input" type="number" id="bm-money-input" placeholder="Ex: 50 ou -30" style="display:none;flex:1;">
+        <button class="ghost-btn" onclick="addBM()" style="margin-left:auto;white-space:nowrap;">＋ Ajouter</button>
+      </div>
+      <div class="char-list" id="bm-list" style="max-height:200px;"></div>
+      <div style="font-size:12px;color:var(--muted2);margin-top:6px;" id="bm-count-txt">0 élément(s)</div>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <input class="f-input" id="bm-save-list-name" placeholder="Nom de cette liste…" style="flex:1;">
+        <button class="ghost-btn" onclick="saveBMList()" style="white-space:nowrap;">💾 Sauvegarder</button>
+      </div>
+
+      <!-- ROUE -->
+      <div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--border);">
+        <div class="card-title" style="display:flex;align-items:center;gap:8px;">🎡 Roue de bonus/malus (optionnel)</div>
+        <p style="font-size:12px;color:var(--muted2);margin-bottom:10px;line-height:1.6;">Crée une roue avec plusieurs cases. Si elle est tirée, tout le monde la voit et le joueur concerné doit la faire tourner lui-même !</p>
+        <div id="wheel-saved-card" style="display:none;margin-bottom:12px;">
+          <div class="card-title" style="font-size:10px;">📂 Mes roues sauvegardées</div>
+          <div id="wheel-saved-container" style="display:flex;flex-direction:column;gap:6px;"></div>
+        </div>
+        <input class="f-input" id="wheel-name-input" placeholder="Nom de la roue (ex : Roue du destin)" maxlength="40" style="margin-bottom:8px;">
+        <div class="seg-builder-row">
+          <input class="f-input" id="wheel-seg-text-input" placeholder="Texte de la case…" maxlength="50" style="flex:2;">
+          <select class="f-input" id="wheel-seg-type-select" style="flex:1;cursor:pointer;"><option value="bonus">✨ Bonus</option><option value="malus">💀 Malus</option></select>
+        </div>
+        <div class="seg-builder-row">
+          <label style="font-size:12px;color:var(--muted2);display:flex;align-items:center;gap:6px;flex-shrink:0;cursor:pointer;">
+            <input type="checkbox" id="wheel-seg-money-toggle" onchange="document.getElementById('wheel-seg-money-input').style.display=this.checked?'block':'none'" style="accent-color:var(--gold);">Effet budget
+          </label>
+          <input class="f-input" type="number" id="wheel-seg-money-input" placeholder="Ex: 50 ou -30" style="display:none;flex:1;">
+          <button class="ghost-btn" onclick="addWheelSegment()" style="margin-left:auto;white-space:nowrap;">＋ Ajouter la case</button>
+        </div>
+        <div class="seg-builder-list" id="wheel-seg-list"></div>
+        <div style="font-size:12px;color:var(--muted2);margin-bottom:10px;" id="wheel-seg-count-txt">0 case(s) — minimum 2</div>
+        <button class="ghost-btn" onclick="createWheelEntry()" style="width:100%;margin-bottom:10px;">🎡 Créer cette roue</button>
+        <div style="display:flex;gap:8px;">
+          <input class="f-input" id="wheel-save-name" placeholder="Nom pour sauvegarder cette roue…" style="flex:1;">
+          <button class="ghost-btn" onclick="saveWheelPreset()" style="white-space:nowrap;">💾 Sauvegarder</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="big-btn" id="c-btn" onclick="createRoom()" disabled>🚀 CRÉER LA PARTIE</button>
+  <div style="text-align:center;margin-top:12px;"><button class="ghost-btn" onclick="showScreen('scr-mode')">← Retour</button></div>
+</div>
+
+<!-- JOIN -->
+<div class="scr" id="scr-join">
+  <div class="hero" style="margin-bottom:18px;">
+    <h1 class="hero-title" style="font-size:clamp(34px,6vw,56px);"><span class="ht1">REJOINDRE</span><span class="ht2">UNE PARTIE</span></h1>
+  </div>
+  <div class="card">
+    <label class="f-label" style="margin-bottom:6px;">Ton pseudo</label>
+    <input class="f-input" id="j-name" placeholder="Ton pseudo" maxlength="16" style="margin-bottom:14px;">
+    <label class="f-label" style="margin-bottom:6px;">Code de la partie</label>
+    <input class="f-input" id="j-code" placeholder="CODE" maxlength="30" style="font-family:var(--fd);font-size:22px;letter-spacing:5px;text-transform:uppercase;text-align:center;">
+  </div>
+  <button class="big-btn" onclick="joinRoom()">🔗 REJOINDRE</button>
+  <div style="text-align:center;margin-top:12px;"><button class="ghost-btn" onclick="showScreen('scr-mode')">← Retour</button></div>
+</div>
+
+<!-- LOBBY -->
+<div class="scr" id="scr-lobby">
+  <div style="text-align:center;padding:24px 18px;">
+    <div style="font-family:var(--fd);font-size:22px;letter-spacing:3px;color:var(--muted2);margin-bottom:4px;">CODE DE LA PARTIE</div>
+    <div class="lobby-code-box" id="lobby-code"></div>
+    <button class="ghost-btn" onclick="copyCode()" style="margin-bottom:16px;">📋 Copier le code</button>
+  </div>
+  <div class="card">
+    <div class="card-title">👥 Joueurs connectés (<span id="player-count">1</span> / 6 max)</div>
+    <div class="player-list-lobby" id="player-list-lobby"></div>
+    <div style="font-size:12px;color:var(--muted2);">Minimum 2 joueurs requis. Max 6.</div>
+  </div>
+  <div id="host-start-zone" style="display:none;">
+    <button class="big-btn" id="start-game-btn" onclick="startGame()" disabled>🚀 LANCER LA PARTIE</button>
+  </div>
+  <div id="guest-wait-zone" style="display:none;text-align:center;padding:16px;">
+    <div class="spinner"></div>
+    <p style="color:var(--muted2);font-size:14px;">En attente du lancement par l'hôte…</p>
+  </div>
+</div>
+
+<!-- AUCTION -->
+<div class="scr" id="scr-auction">
+  <div class="budget-row" id="budget-row"></div>
+  <div id="teams-container" class="teams-grid"></div>
+  <div class="auction-card">
+    <div class="auction-emoji" id="auction-emoji" style="display:none;"></div>
+    <img class="auction-img" id="auction-img" style="display:none;" alt="">
+    <div class="auction-name" id="auction-name"></div>
+    <div class="auction-cat" id="auction-cat"></div>
+    <div class="auction-num" id="auction-num"></div>
+  </div>
+  <div class="turn-banner" id="turn-banner"></div>
+  <div class="bid-display">
+    <div class="bid-amount" id="bid-amount">0€</div>
+    <div class="bid-label">Enchère actuelle</div>
+    <div class="bid-by" id="bid-by"></div>
+  </div>
+  <div class="forced-banner" id="forced-banner" style="display:none;"></div>
+  <div id="bid-zone" style="display:none;">
+    <div class="raise-btns" id="raise-btns"></div>
+    <div class="bid-actions">
+      <button class="big-btn" id="btn-open" onclick="openOrCustomBid()">💰 Ouvrir à 10€</button>
+      <button class="big-btn" id="btn-pass" onclick="passBid()" style="background:rgba(255,255,255,.06);color:var(--white);border:1px solid var(--border);display:none;">⏭ Passer</button>
+    </div>
+    <div id="custom-bid-zone" style="display:none;margin-top:10px;">
+      <div style="display:flex;gap:8px;">
+        <input class="f-input" type="number" id="custom-bid-input" placeholder="Montant…" min="10" step="10" style="flex:1;font-family:var(--fd);font-size:18px;">
+        <button class="ghost-btn" onclick="submitCustomBid()">✅ Valider</button>
+        <button class="ghost-btn" onclick="hideCustomBid()">✕</button>
+      </div>
+    </div>
+  </div>
+  <div id="wait-zone" style="display:none;text-align:center;padding:12px;">
+    <div class="spinner"></div>
+    <div style="font-size:13px;color:var(--muted2);" id="wait-txt">En attente…</div>
+  </div>
+</div>
+
+<!-- SOLD -->
+<div class="scr" id="scr-sold">
+  <div class="budget-row" id="sold-budget-row"></div>
+  <div class="sold-banner">
+    <div class="sold-icon" id="sold-emoji" style="display:none;"></div>
+    <img class="sold-img" id="sold-img" style="display:none;" alt="">
+    <div style="font-family:var(--fd);font-size:20px;letter-spacing:2px;color:var(--gold);margin-bottom:4px;" id="sold-char-name"></div>
+    <div class="sold-to" id="sold-to"></div>
+    <div style="font-size:13px;color:var(--muted2);" id="sold-detail"></div>
+  </div>
+  <div id="sold-wheel-zone" style="display:none;margin-bottom:16px;"></div>
+  <div id="sold-bm-reveal" style="display:none;margin-bottom:16px;"></div>
+  <div id="sold-teams-container" class="teams-grid" style="margin-bottom:16px;"></div>
+  <button class="big-btn" onclick="nextAuction()" id="next-btn">Prochain personnage →</button>
+  <p style="font-size:11px;color:var(--muted);margin-top:10px;text-align:center;" id="next-btn-sub">Un seul joueur doit cliquer.</p>
+</div>
+
+<!-- FINAL -->
+<div class="scr" id="scr-final">
+  <div style="text-align:center;margin-bottom:22px;">
+    <div style="font-size:60px;margin-bottom:10px;animation:pop .6s cubic-bezier(.34,1.5,.64,1) both;">🏆</div>
+    <div style="font-family:var(--fd);font-size:clamp(30px,6vw,52px);letter-spacing:4px;margin-bottom:6px;">MERCATO TERMINÉ !</div>
+    <p style="font-size:14px;color:var(--muted2);">Voici les équipes constituées.</p>
+  </div>
+  <div class="final-teams" id="final-teams"></div>
+  <div style="text-align:center;"><button class="ghost-btn" onclick="leaveGame()">← Quitter</button></div>
+</div>
+
+</main>
+<div id="toast"></div>
+<script>
+// ════════════════════════════════════════
+//  CONFIG
+// ════════════════════════════════════════
+const BUDGET=500, TEAM_SIZE=5, MIN_BID=10, BID_STEP=10;
+const BM_CHANCE=0.7;
+const MAX_PLAYERS=6;
+const CAT_EMOJIS={'Film':'🎬','Série':'📺','Manga':'⛩️','Animé':'⛩️','Jeu vidéo':'🎮','Sport':'⚽','Musique':'🎵','Histoire':'📖','Politique':'🏛️','Science':'🔬','default':'🌟'};
+const QUICK_CATS=['Film','Série','Manga/Animé','Jeu vidéo','Sport','Musique','Histoire'];
+function catEmoji(c){return CAT_EMOJIS[c]||CAT_EMOJIS['default'];}
+
+// ════════════════════════════════════════
+//  STATE GLOBAL
+// ════════════════════════════════════════
+let peer=null;
+let conns=[];        // hôte : toutes les connexions
+let hostConn=null;   // guest : connexion vers l'hôte
+let isHost=false;
+let MY=null;         // mon index dans O.players
+let O=null;          // état partagé faisant autorité (hôte uniquement)
+let charList=[];
+let bmList=[];
+let bmEnabled=false;
+let wheelSegBuilder=[];
+let pendingImgData=null;
+
+function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML;}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');clearTimeout(window._tt);window._tt=setTimeout(()=>t.classList.remove('on'),2600);}
+function showScreen(id){document.querySelectorAll('.scr').forEach(s=>s.classList.toggle('on',s.id===id));window.scrollTo({top:0,behavior:'smooth'});}
+function setConn(txt){const p=document.getElementById('conn-pill');p.classList.add('show');if(txt)document.getElementById('conn-txt').textContent=txt;}
+
+// ════════════════════════════════════════
+//  RÉSEAU — hub-and-spoke
+//  Hôte = autorité, broadcast aux guests
+//  Guests envoient des "actions" à l'hôte
+// ════════════════════════════════════════
+function genCode(){const c='abcdefghjkmnpqrstuvwxyz23456789';let s='nx-mc-';for(let i=0;i<6;i++)s+=c[Math.floor(Math.random()*c.length)];return s;}
+function initPeer(id){
+  return new Promise((res,rej)=>{
+    peer=new Peer(id||undefined,{debug:0,config:{iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}]}});
+    peer.on('open',pid=>res(pid));
+    peer.on('error',e=>rej(e));
+    setTimeout(()=>rej(new Error('timeout')),12000);
+  });
+}
+
+// ── Hôte : envoie l'état à TOUS les guests ──
+function broadcast(){
+  const msg={type:'state',data:O};
+  conns.forEach(c=>{if(c&&c.open)try{c.send(msg);}catch(e){}});
+}
+
+// ── Hôte : reçoit une action d'un guest ──
+function onGuestAction(action,fromIdx){
+  if(!isHost)return;
+  if(action.type==='bid'){
+    hostHandleBid(fromIdx,action.amount);
+  } else if(action.type==='pass'){
+    hostHandlePass(fromIdx);
+  } else if(action.type==='next'){
+    hostHandleNext();
+  } else if(action.type==='spinWheel'){
+    hostHandleSpinWheel(fromIdx);
+  }
+}
+
+// ── Guest : reçoit le state de l'hôte ──
+function onStateReceived(state){
+  O=state;
+  render();
+}
+
+// ── Guest : envoie une action à l'hôte ──
+function sendAction(action){
+  if(isHost){
+    // L'hôte traite directement
+    onGuestAction(action,MY);
+  } else if(hostConn&&hostConn.open){
+    hostConn.send({type:'action',action,from:MY});
+  }
+}
+
+// ════════════════════════════════════════
+//  UI DE CONFIGURATION
+// ════════════════════════════════════════
+function buildQuickCats(){
+  document.getElementById('quick-cats').innerHTML='<span style="font-size:11px;color:var(--muted2);align-self:center;">Catégorie :</span>'+
+    QUICK_CATS.map(c=>`<button class="ghost-btn" style="padding:4px 10px;font-size:11px;" onclick="document.getElementById('char-cat-input').value='${c}'">${catEmoji(c)} ${c}</button>`).join('');
+}
+function handleImgFile(ev){
+  const file=ev.target.files[0];if(!file)return;
+  if(!file.type.startsWith('image/')){toast('⚠️ Image uniquement !');return;}
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const img=new Image();
+    img.onload=()=>{
+      const canvas=document.createElement('canvas');
+      const max=200;let w=img.width,h=img.height;
+      if(w>h&&w>max){h=h*max/w;w=max;}else if(h>max){w=w*max/h;h=max;}
+      canvas.width=w;canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      pendingImgData=canvas.toDataURL('image/jpeg',0.55);
+      document.getElementById('char-img-url-input').value='';
+      showImgPreview(pendingImgData);
+    };img.src=e.target.result;
+  };reader.readAsDataURL(file);
+}
+function showImgPreview(src){
+  document.getElementById('char-img-preview').src=src;
+  document.getElementById('char-img-preview-wrap').style.display='block';
+  document.getElementById('char-img-clear-btn').style.display='block';
+}
+function clearPendingImg(){
+  pendingImgData=null;
+  document.getElementById('char-img-url-input').value='';
+  document.getElementById('char-img-file-input').value='';
+  document.getElementById('char-img-preview-wrap').style.display='none';
+  document.getElementById('char-img-clear-btn').style.display='none';
+}
+document.addEventListener('input',e=>{
+  if(e.target.id==='c-name')validateCreate();
+  if(e.target.id==='char-img-url-input'){
+    const url=e.target.value.trim();
+    if(url){pendingImgData=null;showImgPreview(url);}
+    else{document.getElementById('char-img-preview-wrap').style.display='none';document.getElementById('char-img-clear-btn').style.display='none';}
+  }
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&document.querySelector('.scr.on')?.id==='scr-create')addChar();
+});
+function addChar(){
+  const name=document.getElementById('char-name-input').value.trim();
+  const cat=document.getElementById('char-cat-input').value.trim()||'';
+  const urlInput=document.getElementById('char-img-url-input').value.trim();
+  if(!name){toast('⚠️ Entre un nom !');return;}
+  if(charList.find(c=>c.name.toLowerCase()===name.toLowerCase())){toast('⚠️ Déjà dans la liste !');return;}
+  const img=pendingImgData||urlInput||null;
+  charList.push({name,cat,emoji:catEmoji(cat),img});
+  document.getElementById('char-name-input').value='';
+  document.getElementById('char-cat-input').value='';
+  clearPendingImg();renderCharList();validateCreate();
+  setTimeout(()=>document.getElementById('char-name-input').focus(),50);
+}
+function removeChar(i){charList.splice(i,1);renderCharList();validateCreate();}
+function renderCharList(){
+  const el=document.getElementById('char-list');
+  el.innerHTML=charList.map((c,i)=>`
+    <div class="char-row">
+      ${c.img?`<img class="char-row-img" src="${esc(c.img)}" onerror="this.style.display='none'" alt=""><div class="char-row-emoji" style="display:none;">${c.emoji}</div>`:`<div class="char-row-emoji">${c.emoji}</div>`}
+      <div style="flex:1;"><div class="char-row-name">${esc(c.name)}</div>${c.cat?`<div class="char-row-cat">${esc(c.cat)}</div>`:''}</div>
+      <button class="danger-btn" onclick="removeChar(${i})">✕</button>
+    </div>`).join('');
+  document.getElementById('char-count-txt').innerHTML=
+    `<span style="color:${charList.length>=10?'var(--g)':'var(--r)'}">${charList.length} personnage(s)</span> — ${charList.length>=10?'✅ Prêt !':'⚠️ Min. 10 requis'}`;
+}
+function validateCreate(){
+  const n=document.getElementById('c-name')?.value.trim();
+  const bmOk=!bmEnabled||bmList.length>=1;
+  document.getElementById('c-btn').disabled=!(n&&charList.length>=10&&bmOk);
+}
+
+// Bonus/Malus UI
+function toggleBM(){
+  bmEnabled=document.getElementById('bm-enable-toggle').checked;
+  document.getElementById('bm-content').style.display=bmEnabled?'block':'none';
+  if(bmEnabled){renderBMSavedLists();renderWheelPresets();renderWheelSegBuilder();}
+  validateCreate();
+}
+function addBM(){
+  const text=document.getElementById('bm-text-input').value.trim();
+  const type=document.getElementById('bm-type-select').value;
+  const hasMoney=document.getElementById('bm-money-toggle').checked;
+  const money=hasMoney?(parseInt(document.getElementById('bm-money-input').value)||0):0;
+  if(!text){toast('⚠️ Décris le bonus/malus !');return;}
+  bmList.push({text,type,money:hasMoney?money:0});
+  document.getElementById('bm-text-input').value='';
+  document.getElementById('bm-money-toggle').checked=false;
+  document.getElementById('bm-money-input').value='';
+  document.getElementById('bm-money-input').style.display='none';
+  renderBMList();validateCreate();
+}
+function removeBM(i){bmList.splice(i,1);renderBMList();validateCreate();}
+function renderBMList(){
+  document.getElementById('bm-list').innerHTML=bmList.map((b,i)=>{
+    if(b.type==='wheel'){
+      return`<div class="char-row">
+        <div class="char-row-emoji">🎡</div>
+        <div style="flex:1;"><div class="char-row-name">Roue : ${esc(b.text)}</div><div class="char-row-cat">${b.segments.length} case(s)</div></div>
+        <button class="danger-btn" onclick="removeBM(${i})">✕</button>
+      </div>`;
+    }
+    return`<div class="char-row">
+      <div class="char-row-emoji" style="color:${b.type==='bonus'?'var(--g)':'var(--r)'};">${b.type==='bonus'?'✨':'💀'}</div>
+      <div style="flex:1;"><div class="char-row-name">${esc(b.text)}${b.money?` <span style="color:${b.money>0?'var(--g)':'var(--r)'};">(${b.money>0?'+':''}${b.money}€)</span>`:''}</div></div>
+      <button class="danger-btn" onclick="removeBM(${i})">✕</button>
+    </div>`;
+  }).join('');
+  document.getElementById('bm-count-txt').textContent=`${bmList.length} élément(s)`;
+}
+
+// ─── Roue : construction ───
+function addWheelSegment(){
+  const text=document.getElementById('wheel-seg-text-input').value.trim();
+  const type=document.getElementById('wheel-seg-type-select').value;
+  const hasMoney=document.getElementById('wheel-seg-money-toggle').checked;
+  const money=hasMoney?(parseInt(document.getElementById('wheel-seg-money-input').value)||0):0;
+  if(!text){toast('⚠️ Décris la case de la roue !');return;}
+  wheelSegBuilder.push({text,type,money:hasMoney?money:0});
+  document.getElementById('wheel-seg-text-input').value='';
+  document.getElementById('wheel-seg-money-toggle').checked=false;
+  document.getElementById('wheel-seg-money-input').value='';
+  document.getElementById('wheel-seg-money-input').style.display='none';
+  renderWheelSegBuilder();
+}
+function removeWheelSegment(i){wheelSegBuilder.splice(i,1);renderWheelSegBuilder();}
+function renderWheelSegBuilder(){
+  document.getElementById('wheel-seg-list').innerHTML=wheelSegBuilder.map((s,i)=>`
+    <div class="seg-chip">
+      <div class="sc-dot" style="background:${s.type==='bonus'?'var(--g)':'var(--r)'};"></div>
+      <div style="flex:1;">${esc(s.text)}${s.money?` <span style="color:${s.money>0?'var(--g)':'var(--r)'};">(${s.money>0?'+':''}${s.money}€)</span>`:''}</div>
+      <button class="danger-btn" style="padding:3px 8px;" onclick="removeWheelSegment(${i})">✕</button>
+    </div>`).join('');
+  const n=wheelSegBuilder.length;
+  document.getElementById('wheel-seg-count-txt').innerHTML=`<span style="color:${n>=2?'var(--g)':'var(--r)'};">${n} case(s)</span> — ${n>=2?'✅ Prêt !':'⚠️ Minimum 2 cases'}`;
+}
+function createWheelEntry(){
+  const name=document.getElementById('wheel-name-input').value.trim();
+  if(!name){toast('⚠️ Donne un nom à la roue !');return;}
+  if(wheelSegBuilder.length<2){toast('⚠️ Ajoute au moins 2 cases !');return;}
+  bmList.push({type:'wheel',text:name,segments:[...wheelSegBuilder]});
+  document.getElementById('wheel-name-input').value='';
+  wheelSegBuilder=[];renderWheelSegBuilder();renderBMList();validateCreate();
+  toast(`🎡 Roue "${name}" ajoutée à la liste !`);
+}
+
+// ─── Roue : presets sauvegardés ───
+const WHEEL_KEY='nx_mercato_wheels';
+function getWheelPresets(){try{return JSON.parse(localStorage.getItem(WHEEL_KEY)||'[]');}catch{return[];}}
+function setWheelPresets(l){try{localStorage.setItem(WHEEL_KEY,JSON.stringify(l));return true;}catch{toast('⚠️ Stockage plein !');return false;}}
+function saveWheelPreset(){
+  const name=document.getElementById('wheel-save-name').value.trim();
+  if(!name){toast('⚠️ Donne un nom pour la sauvegarde !');return;}
+  if(wheelSegBuilder.length<2){toast('⚠️ Construis la roue (min. 2 cases) avant de sauvegarder !');return;}
+  const presets=getWheelPresets();
+  const idx=presets.findIndex(p=>p.name.toLowerCase()===name.toLowerCase());
+  const entry={name,segments:[...wheelSegBuilder],savedAt:Date.now()};
+  if(idx>=0){presets[idx]=entry;}else{presets.unshift(entry);}
+  if(setWheelPresets(presets))toast(`💾 Roue "${name}" sauvegardée !`);
+  document.getElementById('wheel-save-name').value='';
+  renderWheelPresets();
+}
+function loadWheelPreset(i){
+  const p=getWheelPresets()[i];if(!p)return;
+  wheelSegBuilder=[...p.segments];
+  document.getElementById('wheel-name-input').value=p.name;
+  renderWheelSegBuilder();
+  toast(`📂 Roue "${p.name}" chargée — clique sur "Créer cette roue" pour l'ajouter !`);
+}
+function deleteWheelPreset(i,ev){
+  ev.stopPropagation();
+  const presets=getWheelPresets();
+  if(!confirm(`Supprimer la roue "${presets[i]?.name}" ?`))return;
+  presets.splice(i,1);setWheelPresets(presets);renderWheelPresets();toast('🗑️ Supprimé.');
+}
+function renderWheelPresets(){
+  const presets=getWheelPresets();
+  const card=document.getElementById('wheel-saved-card');
+  const container=document.getElementById('wheel-saved-container');
+  if(!presets.length){card.style.display='none';return;}
+  card.style.display='block';
+  container.innerHTML=presets.map((p,i)=>`
+    <div class="char-row" style="cursor:pointer;" onclick="loadWheelPreset(${i})">
+      <div class="char-row-emoji">🎡</div>
+      <div style="flex:1;"><div class="char-row-name">${esc(p.name)}</div><div class="char-row-cat">${p.segments.length} case(s)</div></div>
+      <button class="danger-btn" onclick="deleteWheelPreset(${i},event)">✕</button>
+    </div>`).join('');
+}
+
+// Listes sauvegardées personnages
+const SL_KEY='nx_mercato_lists';
+function getSL(){try{return JSON.parse(localStorage.getItem(SL_KEY)||'[]');}catch{return[];}}
+function setSL(l){
+  try{localStorage.setItem(SL_KEY,JSON.stringify(l));return true;}
+  catch{
+    // Quota dépassé (souvent à cause des images en base64) → on retente sans les images
+    try{
+      const stripped=l.map(entry=>({...entry,chars:entry.chars.map(c=>({...c,img:null}))}));
+      localStorage.setItem(SL_KEY,JSON.stringify(stripped));
+      toast('⚠️ Stockage plein — liste sauvegardée SANS les images.');
+      return false;
+    }catch{
+      toast('⚠️ Stockage plein — impossible de sauvegarder, même sans images.');
+      return false;
+    }
+  }
+}
+function saveCurrentList(){
+  const name=document.getElementById('save-list-name').value.trim();
+  if(!name){toast('⚠️ Donne un nom !');return;}
+  if(!charList.length){toast('⚠️ Liste vide !');return;}
+  const lists=getSL();
+  const idx=lists.findIndex(l=>l.name.toLowerCase()===name.toLowerCase());
+  const entry={name,chars:[...charList],savedAt:Date.now()};
+  if(idx>=0){lists[idx]=entry;}else{lists.unshift(entry);}
+  const ok=setSL(lists);
+  if(ok)toast(`💾 "${name}" ${idx>=0?'mis à jour':'sauvegardé'} !`);
+  document.getElementById('save-list-name').value='';renderSavedLists();
+}
+function loadSavedList(i){const l=getSL()[i];if(!l)return;charList=[...l.chars];renderCharList();validateCreate();toast(`📂 "${l.name}" chargé !`);}
+function appendSavedList(i){const l=getSL()[i];if(!l)return;let a=0;l.chars.forEach(c=>{if(!charList.find(e=>e.name.toLowerCase()===c.name.toLowerCase())){charList.push({...c});a++;}});renderCharList();validateCreate();toast(`➕ ${a} perso(s) ajouté(s) !`);}
+function deleteSavedList(i,ev){ev.stopPropagation();const lists=getSL();if(!confirm(`Supprimer "${lists[i]?.name}" ?`))return;lists.splice(i,1);setSL(lists);renderSavedLists();toast('🗑️ Supprimé.');}
+function renderSavedLists(){
+  const lists=getSL();const card=document.getElementById('saved-lists-card');const container=document.getElementById('saved-lists-container');
+  if(!lists.length){card.style.display='none';return;}
+  card.style.display='block';
+  container.innerHTML=lists.map((l,i)=>`
+    <div class="char-row" style="cursor:pointer;" onclick="loadSavedList(${i})">
+      <div class="char-row-emoji">📋</div>
+      <div style="flex:1;"><div class="char-row-name">${esc(l.name)}</div><div class="char-row-cat">${l.chars.length} perso(s)</div></div>
+      <button class="ghost-btn" style="padding:4px 9px;font-size:11px;" onclick="event.stopPropagation();appendSavedList(${i})">➕</button>
+      <button class="danger-btn" onclick="deleteSavedList(${i},event)">✕</button>
+    </div>`).join('');
+}
+
+// Listes sauvegardées BM
+const BML_KEY='nx_mercato_bm_lists';
+function getBML(){try{return JSON.parse(localStorage.getItem(BML_KEY)||'[]');}catch{return[];}}
+function setBML(l){try{localStorage.setItem(BML_KEY,JSON.stringify(l));}catch{toast('⚠️ Stockage plein !');}}
+function saveBMList(){
+  const name=document.getElementById('bm-save-list-name').value.trim();
+  if(!name){toast('⚠️ Donne un nom !');return;}
+  if(!bmList.length){toast('⚠️ Liste vide !');return;}
+  const lists=getBML();
+  const idx=lists.findIndex(l=>l.name.toLowerCase()===name.toLowerCase());
+  const entry={name,items:[...bmList],savedAt:Date.now()};
+  if(idx>=0){lists[idx]=entry;toast(`💾 "${name}" mis à jour !`);}
+  else{lists.unshift(entry);toast(`💾 "${name}" sauvegardé !`);}
+  setBML(lists);document.getElementById('bm-save-list-name').value='';renderBMSavedLists();
+}
+function loadBMList(i){const l=getBML()[i];if(!l)return;bmList=[...l.items];renderBMList();validateCreate();toast(`📂 "${l.name}" chargé !`);}
+function appendBMList(i){const l=getBML()[i];if(!l)return;let a=0;l.items.forEach(it=>{if(!bmList.find(e=>e.text.toLowerCase()===it.text.toLowerCase())){bmList.push({...it});a++;}});renderBMList();validateCreate();toast(`➕ ${a} élément(s) ajouté(s) !`);}
+function deleteBMList(i,ev){ev.stopPropagation();const lists=getBML();if(!confirm(`Supprimer "${lists[i]?.name}" ?`))return;lists.splice(i,1);setBML(lists);renderBMSavedLists();toast('🗑️ Supprimé.');}
+function renderBMSavedLists(){
+  const lists=getBML();const card=document.getElementById('bm-saved-lists-card');const container=document.getElementById('bm-saved-lists-container');
+  if(!lists.length){card.style.display='none';return;}
+  card.style.display='block';
+  container.innerHTML=lists.map((l,i)=>`
+    <div class="char-row" style="cursor:pointer;" onclick="loadBMList(${i})">
+      <div class="char-row-emoji">📋</div>
+      <div style="flex:1;"><div class="char-row-name">${esc(l.name)}</div><div class="char-row-cat">${l.items.length} élément(s)</div></div>
+      <button class="ghost-btn" style="padding:4px 9px;font-size:11px;" onclick="event.stopPropagation();appendBMList(${i})">➕</button>
+      <button class="danger-btn" onclick="deleteBMList(${i},event)">✕</button>
+    </div>`).join('');
+}
+function goCreate(){showScreen('scr-create');renderSavedLists();buildQuickCats();}
+
+// ════════════════════════════════════════
+//  CRÉER / REJOINDRE
+// ════════════════════════════════════════
+async function createRoom(){
+  const name=document.getElementById('c-name').value.trim()||'Hôte';
+  const btn=document.getElementById('c-btn');btn.disabled=true;btn.textContent='⏳ Connexion…';
+  try{
+    isHost=true;MY=0;
+    const code=genCode();const pid=await initPeer(code);
+    O={status:'lobby',players:[{name,idx:0}],budgets:[BUDGET],
+       chars:[...charList].sort(()=>Math.random()-.5),charIdx:0,
+       teams:[[]],openerIdx:0,currentBid:0,currentBidder:-1,phase:'bidding',
+       bmEnabled,bmList:bmEnabled?[...bmList]:[],lastBm:null,lastWinner:null,lastPrice:0,lastChar:null,wheel:null};
+    // Écoute les connexions entrantes
+    peer.on('connection',c=>{
+      if(O.players.length>=MAX_PLAYERS){c.close();return;}
+      c.on('open',()=>{
+        conns.push(c);
+        c.on('data',msg=>{
+          if(!msg)return;
+          if(msg.type==='join'){
+            const newIdx=O.players.length;
+            O.players.push({name:msg.name,idx:newIdx});
+            O.budgets.push(BUDGET);
+            O.teams.push([]);
+            // Informe le nouvel arrivant de son index
+            c.send({type:'welcome',myIdx:newIdx});
+            broadcast();
+            renderLobby();
+          } else if(msg.type==='action'){
+            onGuestAction(msg.action,msg.from);
+          }
+        });
+        c.on('close',()=>{setConn('Un joueur a quitté');});
+      });
+    });
+    const short=pid.replace('nx-mc-','');
+    document.getElementById('lobby-code').textContent=short;
+    showScreen('scr-lobby');setConn('En attente…');renderLobby();
+  }catch(e){
+    toast('❌ Impossible de créer — réessaie.');
+    btn.disabled=false;btn.textContent='🚀 CRÉER LA PARTIE';
+  }
+}
+function copyCode(){const c=document.getElementById('lobby-code').textContent;navigator.clipboard?.writeText(c).then(()=>toast('📋 Code copié !')).catch(()=>toast('Code: '+c));}
+
+async function joinRoom(){
+  const name=document.getElementById('j-name').value.trim();
+  const code=document.getElementById('j-code').value.trim().toLowerCase();
+  if(!name){toast('⚠️ Entre ton pseudo !');return;}
+  if(code.length<6){toast('⚠️ Code invalide.');return;}
+  const btn=document.querySelector('#scr-join .big-btn');btn.disabled=true;btn.textContent='⏳ Connexion…';
+  try{
+    isHost=false;
+    await initPeer();
+    hostConn=peer.connect('nx-mc-'+code,{reliable:true,serialization:'json'});
+    hostConn.on('open',()=>{
+      hostConn.send({type:'join',name});
+      setConn('Connecté !');toast('✅ Connecté !');
+    });
+    hostConn.on('data',msg=>{
+      if(!msg)return;
+      if(msg.type==='welcome'){MY=msg.myIdx;setConn(`Joueur ${MY+1}`);}
+      else if(msg.type==='state'){onStateReceived(msg.data);}
+    });
+    hostConn.on('error',()=>{toast('❌ Connexion refusée.');btn.disabled=false;btn.textContent='🔗 REJOINDRE';});
+    setTimeout(()=>{if(!hostConn.open){toast('❌ Impossible de rejoindre.');btn.disabled=false;btn.textContent='🔗 REJOINDRE';}},8000);
+  }catch(e){toast('❌ Erreur réseau.');btn.disabled=false;btn.textContent='🔗 REJOINDRE';}
+}
+
+// ════════════════════════════════════════
+//  LOBBY RENDER
+// ════════════════════════════════════════
+function renderLobby(){
+  const count=O.players.length;
+  document.getElementById('player-count').textContent=count;
+  document.getElementById('player-list-lobby').innerHTML=O.players.map((p,i)=>`
+    <div class="player-lobby-item">
+      <div style="width:8px;height:8px;border-radius:50%;background:var(--g);flex-shrink:0;"></div>
+      <div style="font-size:14px;font-weight:600;">${esc(p.name)}</div>
+      ${i===0?'<div style="font-size:10px;color:var(--gold);font-weight:800;letter-spacing:1px;text-transform:uppercase;margin-left:auto;">Hôte</div>':''}
+      ${i===MY?'<div style="font-size:10px;color:var(--c);font-weight:700;margin-left:auto;">(toi)</div>':''}
+    </div>`).join('');
+  if(isHost){
+    document.getElementById('host-start-zone').style.display='block';
+    document.getElementById('guest-wait-zone').style.display='none';
+    document.getElementById('start-game-btn').disabled=count<2;
+    document.getElementById('start-game-btn').textContent=count<2?`⏳ En attente (${count}/2 min.)…`:`🚀 LANCER (${count} joueurs)`;
+  } else {
+    document.getElementById('host-start-zone').style.display='none';
+    document.getElementById('guest-wait-zone').style.display='block';
+  }
+}
+
+// ════════════════════════════════════════
+//  LANCER LA PARTIE
+// ════════════════════════════════════════
+function startGame(){
+  if(!isHost)return;
+  O.status='play';O.charIdx=0;O.openerIdx=0;O.currentBid=0;O.currentBidder=-1;O.phase='bidding';
+  O.players.forEach((_,i)=>{O.budgets[i]=BUDGET;O.teams[i]=[];});
+  hostCheckStuckBidder();
+}
+
+// ════════════════════════════════════════
+//  RENDER
+// ════════════════════════════════════════
+function render(){
+  if(!O||MY===null)return;
+  if(O.status==='lobby'){showScreen('scr-lobby');renderLobby();return;}
+  if(O.status==='finished'){showFinal();return;}
+  if(O.phase==='sold')renderSold();
+  else renderAuction();
+}
+
+// ─── Helpers communs ───
+function renderBudgetRow(containerId){
+  const el=document.getElementById(containerId);if(!el)return;
+  const actingPlayer=O.currentBidder===-1?O.openerIdx:findNextBidder();
+  el.innerHTML=O.players.map((p,i)=>{
+    const b=O.budgets[i];const pct=Math.round(b/BUDGET*100);
+    const col=pct>50?'var(--g)':pct>25?'var(--y)':'var(--r)';
+    const isBidder=O.currentBidder===i;
+    return`<div class="budget-item${i===actingPlayer?' active-bidder':''}">
+      <div class="budget-label">${esc(p.name)}${i===MY?' (toi)':''}${isBidder?' 💰':''}</div>
+      <div class="budget-val" style="color:${col};">💶 ${b}€</div>
+      <div class="budget-bar-wrap"><div class="budget-bar" style="width:${pct}%;background:${col};"></div></div>
+    </div>`;
+  }).join('');
+}
+function renderTeamsContainer(containerId){
+  const el=document.getElementById(containerId);if(!el)return;
+  const cols=O.players.length<=2?'1fr 1fr':O.players.length<=4?'1fr 1fr':'repeat(auto-fill,minmax(220px,1fr))';
+  el.style.gridTemplateColumns=cols;
+  el.innerHTML=O.players.map((p,i)=>`
+    <div class="team-block">
+      <div class="team-block-title">🏟️ ${esc(p.name)}</div>
+      <div class="team-slots">
+        ${[...Array(TEAM_SIZE)].map((_,s)=>{
+          const c=O.teams[i][s];
+          if(!c)return`<div class="team-slot"><div class="team-slot-empty">+</div></div>`;
+          const visual=c.img?`<img class="team-slot-img" src="${esc(c.img)}" onerror="this.style.display='none'" alt="">`:`<div class="team-slot-emoji">${c.emoji}</div>`;
+          const bm=c.bm?`<div class="team-slot-bm" title="${c.bm.type==='bonus'?'Bonus':'Malus'}: ${esc(c.bm.text)}">${c.bm.type==='bonus'?'✨':'💀'}</div>`:'';
+          return`<div class="team-slot filled" title="${c.bm?c.bm.text:''}">${visual}<div class="team-slot-name">${esc(c.name)}</div><div class="team-slot-price">${c.price}€</div>${bm}</div>`;
+        }).join('')}
+      </div>
+    </div>`).join('');
+}
+
+// ─── Qui joue en ce moment ? ───
+// Retourne l'index du joueur dont c'est le tour de surenchérir
+// (celui qui a encore de la place ET assez de budget)
+function findNextBidder(){
+  const n=O.players.length;
+  if(O.currentBidder===-1){
+    // Personne n'a encore misé : cherche à partir de l'opener un joueur
+    // qui a de la place ET peut se permettre la mise minimum
+    for(let i=0;i<n;i++){
+      const c=(O.openerIdx+i)%n;
+      if(O.teams[c].length<TEAM_SIZE&&O.budgets[c]>=MIN_BID)return c;
+    }
+    return O.openerIdx; // personne ne peut ouvrir (cas limite géré par hostCheckStuckBidder)
+  }
+  // Cherche le prochain joueur après currentBidder (circulaire)
+  // qui a encore de la place ET assez de budget pour surenchérir
+  const minNext=O.currentBid+BID_STEP;
+  for(let i=1;i<n;i++){
+    const candidate=(O.currentBidder+i)%n;
+    if(O.teams[candidate].length>=TEAM_SIZE)continue;
+    if(O.budgets[candidate]<minNext)continue;
+    return candidate;
+  }
+  return O.currentBidder; // personne d'autre ne peut/veut surenchérir
+}
+
+// ─── AUCTION ───
+function renderAuction(){
+  showScreen('scr-auction');
+  renderBudgetRow('budget-row');
+  renderTeamsContainer('teams-container');
+
+  const char=O.chars[O.charIdx];
+  // Image ou emoji
+  const aE=document.getElementById('auction-emoji'),aI=document.getElementById('auction-img');
+  if(char.img){aI.src=char.img;aI.style.display='block';aE.style.display='none';aI.onerror=()=>{aI.style.display='none';aE.style.display='block';aE.textContent=char.emoji;};}
+  else{aI.style.display='none';aE.style.display='block';aE.textContent=char.emoji;}
+  document.getElementById('auction-name').textContent=char.name;
+  document.getElementById('auction-cat').textContent=char.cat||'';
+  document.getElementById('auction-num').textContent=`Personnage ${O.charIdx+1} / ${O.chars.length}`;
+  document.getElementById('bid-amount').textContent=(O.currentBid||0)+'€';
+  document.getElementById('bid-by').textContent=O.currentBidder===-1?'Aucune enchère pour l\'instant':`Dernière enchère : ${O.players[O.currentBidder].name}`;
+
+  // Forced banner
+  const myFull=O.teams[MY].length>=TEAM_SIZE;
+  const forcedBanner=document.getElementById('forced-banner');
+  if(myFull){forcedBanner.style.display='block';forcedBanner.innerHTML=`✅ Ton équipe est complète ! Les personnages restants vont automatiquement aux autres.`;}
+  else forcedBanner.style.display='none';
+
+  renderBidZone();
+}
+
+function renderBidZone(){
+  const bidZone=document.getElementById('bid-zone');
+  const waitZone=document.getElementById('wait-zone');
+  const customZone=document.getElementById('custom-bid-zone');
+
+  const myFull=O.teams[MY].length>=TEAM_SIZE;
+  if(myFull){
+    // Mon équipe est pleine — je n'enchéris plus
+    bidZone.style.display='none';customZone.style.display='none';waitZone.style.display='none';
+    return;
+  }
+
+  // Détermine si c'est mon tour d'agir
+  const actingPlayer=O.currentBidder===-1?O.openerIdx:findNextBidder();
+  const isMyTurn=actingPlayer===MY;
+  const minNextBid=O.currentBidder===-1?MIN_BID:O.currentBid+BID_STEP;
+
+  if(!isMyTurn){
+    bidZone.style.display='none';customZone.style.display='none';
+    waitZone.style.display='block';
+    document.getElementById('turn-banner').className='turn-banner wait';
+    document.getElementById('turn-banner').textContent=`⏳ Tour de ${O.players[actingPlayer].name}…`;
+    document.getElementById('wait-txt').textContent=`En attente de ${O.players[actingPlayer].name}…`;
+    return;
+  }
+
+  // C'est mon tour
+  document.getElementById('turn-banner').className='turn-banner my-turn';
+
+  // Sécurité : si jamais je n'ai plus les moyens (ne devrait plus arriver
+  // grâce à findNextBidder, mais l'hôte corrige de toute façon tout seul)
+  if(O.budgets[MY]<minNextBid){
+    bidZone.style.display='none';customZone.style.display='none';waitZone.style.display='block';
+    document.getElementById('turn-banner').textContent=`💸 Attribution automatique en cours…`;
+    document.getElementById('wait-txt').textContent=`Un instant…`;
+    return;
+  }
+
+  // Affichage normal de la zone d'enchère
+  bidZone.style.display='block';waitZone.style.display='none';
+
+  // Boutons rapides (montants ronds, multiples de 10)
+  const raises=[10,20,50,100];
+  document.getElementById('raise-btns').innerHTML=raises.map(r=>{
+    const newBid=(O.currentBidder===-1?0:O.currentBid)+r;
+    const canAfford=O.budgets[MY]>=newBid;
+    return`<button class="raise-btn" onclick="sendAction({type:'bid',amount:${newBid}})" ${canAfford?'':'disabled'}>+${r}€ → ${newBid}€</button>`;
+  }).join('');
+
+  const passBtn=document.getElementById('btn-pass');
+  const openBtn=document.getElementById('btn-open');
+  if(O.currentBidder===-1){
+    // Opener doit ouvrir
+    document.getElementById('turn-banner').textContent=`⚽ C'est TON tour d'ouvrir les enchères !`;
+    openBtn.textContent='💰 Ouvrir les enchères à 10€';
+    openBtn.onclick=()=>sendAction({type:'bid',amount:MIN_BID});
+    passBtn.style.display='none';
+  } else {
+    document.getElementById('turn-banner').textContent=`⚽ C'est TON tour — surenchéris ou passe !`;
+    openBtn.textContent='💰 Enchérir un montant…';
+    openBtn.onclick=()=>showCustomBid();
+    passBtn.style.display='block';
+  }
+}
+
+function showCustomBid(){
+  document.getElementById('custom-bid-zone').style.display='block';
+  const input=document.getElementById('custom-bid-input');
+  input.min=O.currentBid+BID_STEP;input.step=BID_STEP;input.value=O.currentBid+BID_STEP;
+  setTimeout(()=>input.focus(),80);
+}
+function hideCustomBid(){document.getElementById('custom-bid-zone').style.display='none';}
+function openOrCustomBid(){
+  if(O.currentBidder===-1)sendAction({type:'bid',amount:MIN_BID});
+  else showCustomBid();
+}
+function submitCustomBid(){
+  let v=parseInt(document.getElementById('custom-bid-input').value)||0;
+  if(v%BID_STEP!==0){toast(`⚠️ Les enchères doivent être des montants ronds (multiples de ${BID_STEP}) !`);return;}
+  if(v<O.currentBid+BID_STEP){toast(`⚠️ Mise minimum : ${O.currentBid+BID_STEP}€`);return;}
+  if(v>O.budgets[MY]){toast('⚠️ Budget insuffisant !');return;}
+  hideCustomBid();
+  sendAction({type:'bid',amount:v});
+}
+function passBid(){
+  if(O.currentBidder===-1){toast('⚠️ Quelqu\'un doit ouvrir les enchères d\'abord !');return;}
+  sendAction({type:'pass'});
+}
+
+// ════════════════════════════════════════
+//  HÔTE : traitement des actions (autorité)
+// ════════════════════════════════════════
+function hostHandleBid(fromIdx,amount){
+  if(!isHost)return;
+  // Vérifie que c'est bien au tour de ce joueur
+  const actingPlayer=O.currentBidder===-1?O.openerIdx:findNextBidder();
+  if(actingPlayer!==fromIdx)return; // ignore si pas son tour
+  if(amount%BID_STEP!==0)return; // montants ronds uniquement (multiples de 10)
+  const minReq=O.currentBidder===-1?MIN_BID:O.currentBid+BID_STEP;
+  if(amount<minReq)return; // doit surenchérir d'au moins BID_STEP
+  if(O.budgets[fromIdx]<amount)return; // budget insuffisant
+  O.currentBid=amount;O.currentBidder=fromIdx;
+  hostCheckStuckBidder();
+}
+
+function hostHandlePass(fromIdx){
+  if(!isHost)return;
+  if(O.currentBidder===-1)return; // pas de pass sans enchère ouverte
+  const actingPlayer=findNextBidder();
+  if(actingPlayer!==fromIdx)return;
+  // Ce joueur passe → le dernier bidder remporte
+  hostAttributeChar(O.currentBidder,O.currentBid);
+}
+
+// ─── Vérifie si le joueur désigné pour agir peut réellement le faire ───
+// Si personne ne peut/veut plus enchérir, l'hôte tranche tout seul —
+// peu importe si le joueur bloqué est l'hôte ou un simple guest.
+function hostCheckStuckBidder(){
+  if(!isHost)return;
+  const actingPlayer=O.currentBidder===-1?O.openerIdx:findNextBidder();
+  const minNext=O.currentBidder===-1?MIN_BID:O.currentBid+BID_STEP;
+  const canAct=O.teams[actingPlayer].length<TEAM_SIZE&&O.budgets[actingPlayer]>=minNext;
+
+  if(canAct){
+    // Tout va bien, le joueur désigné peut agir normalement
+    broadcast();render();
+    return;
+  }
+
+  if(O.currentBidder!==-1){
+    // Quelqu'un a déjà misé et plus personne d'autre ne peut surenchérir → il remporte
+    hostAttributeChar(O.currentBidder,O.currentBid);
+    return;
+  }
+
+  // Personne n'a encore misé et personne ne peut se permettre d'ouvrir
+  const freeIdx=O.players.findIndex((_,i)=>O.teams[i].length<TEAM_SIZE);
+  if(freeIdx===-1){
+    // Toutes les équipes sont pleines → fin de la partie
+    O.status='finished';broadcast();render();return;
+  }
+  // Attribution gratuite forcée au premier joueur ayant encore de la place
+  hostAttributeChar(freeIdx,0);
+}
+
+function hostHandleNext(){
+  if(!isHost)return;
+  const allFull=O.teams.every(t=>t.length>=TEAM_SIZE);
+  const noMore=O.charIdx+1>=O.chars.length;
+  if(allFull||noMore){O.status='finished';broadcast();render();return;}
+  O.charIdx++;O.currentBid=0;O.currentBidder=-1;O.phase='bidding';
+  O.openerIdx=(O.openerIdx+1)%O.players.length;
+  // Passe l'opener si son équipe est pleine
+  let tries=0;
+  while(O.teams[O.openerIdx].length>=TEAM_SIZE&&tries<O.players.length){
+    O.openerIdx=(O.openerIdx+1)%O.players.length;tries++;
+  }
+  hostCheckStuckBidder();
+}
+
+// Attribution réelle (HÔTE UNIQUEMENT)
+function hostAttributeChar(winnerIdx,price){
+  if(!isHost)return;
+  const char=O.chars[O.charIdx];
+  // Tirage bonus/malus
+  let bm=null,wheelPending=null;
+  if(O.bmEnabled&&O.bmList&&O.bmList.length>0&&Math.random()<BM_CHANCE){
+    const picked=O.bmList[Math.floor(Math.random()*O.bmList.length)];
+    if(picked.type==='wheel'){
+      wheelPending={name:picked.text,segments:picked.segments};
+    } else {
+      bm={...picked};
+    }
+  }
+  const bought={...char,price,bm};
+  O.teams[winnerIdx].push(bought);
+  const slotIdx=O.teams[winnerIdx].length-1;
+  if(price>0)O.budgets[winnerIdx]=Math.max(0,O.budgets[winnerIdx]-price);
+  if(bm&&bm.money)O.budgets[winnerIdx]=Math.max(0,O.budgets[winnerIdx]+bm.money);
+  O.lastWinner=winnerIdx;O.lastPrice=price;O.lastChar={...char};O.lastBm=bm;
+  O.wheel=wheelPending?{winnerIdx,slotIdx,name:wheelPending.name,segments:wheelPending.segments,spun:false,resultIdx:null,spinDeg:0}:null;
+  O.phase='sold';
+  broadcast();render();
+}
+
+// Fait tourner la roue (HÔTE UNIQUEMENT) — seul le joueur concerné peut la déclencher
+function hostHandleSpinWheel(fromIdx){
+  if(!isHost)return;
+  if(!O.wheel||O.wheel.spun)return;
+  if(fromIdx!==O.wheel.winnerIdx)return;
+  const segs=O.wheel.segments;
+  const n=segs.length;
+  const idx=Math.floor(Math.random()*n);
+  const segAngle=360/n;
+  const targetCenter=idx*segAngle+segAngle/2;
+  const extraTurns=4+Math.floor(Math.random()*3); // 4 à 6 tours complets
+  const finalDeg=extraTurns*360+(360-targetCenter); // la case tombe sous le pointeur (fixe, en haut)
+  const seg=segs[idx];
+  O.wheel.spun=true;O.wheel.resultIdx=idx;O.wheel.spinDeg=finalDeg;
+  const{winnerIdx,slotIdx}=O.wheel;
+  const bm={type:seg.type,text:seg.text,money:seg.money||0};
+  if(O.teams[winnerIdx]&&O.teams[winnerIdx][slotIdx])O.teams[winnerIdx][slotIdx].bm=bm;
+  if(bm.money)O.budgets[winnerIdx]=Math.max(0,O.budgets[winnerIdx]+bm.money);
+  O.lastBm=bm;
+  broadcast();render();
+}
+function spinWheel(){
+  if(!O.wheel||O.wheel.spun||MY!==O.wheel.winnerIdx)return;
+  sendAction({type:'spinWheel'});
+}
+
+// ─── SOLD ───
+function renderSold(){
+  showScreen('scr-sold');
+  renderBudgetRow('sold-budget-row');
+  const char=O.lastChar||{};const winner=O.lastWinner;const price=O.lastPrice;
+  const sE=document.getElementById('sold-emoji'),sI=document.getElementById('sold-img');
+  if(char.img){sI.src=char.img;sI.style.display='block';sE.style.display='none';sI.onerror=()=>{sI.style.display='none';sE.style.display='block';sE.textContent=char.emoji||'?';};}
+  else{sI.style.display='none';sE.style.display='block';sE.textContent=char.emoji||'?';}
+  document.getElementById('sold-char-name').textContent=char.name||'';
+  document.getElementById('sold-to').textContent=`🏆 ${O.players[winner]?.name||'?'}`;
+  document.getElementById('sold-detail').textContent=price===0?'Attribué gratuitement':`Acheté pour ${price}€`;
+
+  const wheelZone=document.getElementById('sold-wheel-zone');
+  const bmEl=document.getElementById('sold-bm-reveal');
+  const wheelPending=O.wheel&&!O.wheel.spun;
+
+  if(O.wheel){
+    // Une roue a été tirée — tout le monde la voit
+    wheelZone.style.display='block';
+    wheelZone.innerHTML=renderWheelHTML(O.wheel);
+    if(O.wheel.spun){
+      // Force le rendu à 0° d'abord, puis anime vers l'angle final (transition CSS)
+      requestAnimationFrame(()=>{
+        requestAnimationFrame(()=>{
+          const disc=document.getElementById('wheel-disc-el');
+          if(disc)disc.style.transform=`rotate(${O.wheel.spinDeg}deg)`;
+        });
+      });
+    }
+    if(!O.wheel.spun){
+      const isWinner=MY===O.wheel.winnerIdx;
+      const ctrl=document.getElementById('wheel-ctrl');
+      if(ctrl){
+        ctrl.innerHTML=isWinner
+          ?`<button class="big-btn" onclick="spinWheel()">🎡 TOURNER LA ROUE !</button>`
+          :`<p style="text-align:center;font-size:13px;color:var(--muted2);">⏳ En attente que ${esc(O.players[O.wheel.winnerIdx]?.name||'')} tourne la roue…</p>`;
+      }
+    }
+  } else {
+    wheelZone.style.display='none';
+  }
+
+  // Bonus/malus reveal (masqué tant que la roue n'a pas été tournée)
+  const bm=O.lastBm;
+  if(O.bmEnabled&&!wheelPending){
+    if(bm){
+      const icon=bm.type==='bonus'?'✨':'💀';
+      bmEl.innerHTML=`<div class="bm-reveal ${bm.type}">
+        <div class="bm-reveal-icon">${icon}</div>
+        <div class="bm-reveal-label" style="color:${bm.type==='bonus'?'var(--g)':'var(--r)'};">${bm.type==='bonus'?'BONUS RÉVÉLÉ !':'MALUS RÉVÉLÉ !'}</div>
+        <div class="bm-reveal-txt">${esc(bm.text)}</div>
+        ${bm.money?`<div class="bm-reveal-money" style="color:${bm.money>0?'var(--g)':'var(--r)'};">${bm.money>0?'+':''}${bm.money}€ sur le budget de ${esc(O.players[winner]?.name||'')}</div>`:''}
+      </div>`;
+      bmEl.style.display='block';
+    } else {
+      bmEl.innerHTML=`<div style="text-align:center;font-size:12px;color:var(--muted2);padding:10px;">🎲 Aucun bonus/malus cette fois !</div>`;
+      bmEl.style.display='block';
+    }
+  } else bmEl.style.display='none';
+
+  renderTeamsContainer('sold-teams-container');
+
+  const allFull=O.teams.every(t=>t.length>=TEAM_SIZE);
+  const noMore=O.charIdx+1>=O.chars.length;
+  const nextBtn=document.getElementById('next-btn');
+  const nextSub=document.getElementById('next-btn-sub');
+  nextBtn.textContent=(allFull||noMore)?'🏁 Voir les équipes finales':'Prochain personnage →';
+
+  if(wheelPending){
+    // On bloque le passage tant que la roue n'a pas tourné
+    nextBtn.style.display='none';
+    nextSub.textContent='🎡 En attente du tour de roue…';
+    return;
+  }
+
+  nextBtn.disabled=false;
+  // Seul l'hôte clique, les autres voient "en attente"
+  if(isHost){
+    nextBtn.style.display='block';
+    nextSub.textContent='Clique pour continuer.';
+  } else {
+    nextBtn.style.display='none';
+    nextSub.textContent='⏳ En attente que l\'hôte passe au suivant…';
+  }
+}
+
+// ─── Construit le HTML de la roue (visible par tous) ───
+const WHEEL_COLORS_BONUS=['#00ff9d','#00c97e','#00e5ff'];
+const WHEEL_COLORS_MALUS=['#ff3d71','#d6265a','#ff6a3d'];
+function renderWheelHTML(wheel){
+  const n=wheel.segments.length;
+  const segAngle=360/n;
+  let bC=0,mC=0;
+  const gradientParts=wheel.segments.map((s,i)=>{
+    const color=s.type==='bonus'?WHEEL_COLORS_BONUS[(bC++)%WHEEL_COLORS_BONUS.length]:WHEEL_COLORS_MALUS[(mC++)%WHEEL_COLORS_MALUS.length];
+    return`${color} ${i*segAngle}deg ${(i+1)*segAngle}deg`;
+  }).join(',');
+  const labels=wheel.segments.map((s,i)=>{
+    const angle=i*segAngle+segAngle/2;
+    return`<div class="wheel-seg-label" style="transform:rotate(${angle}deg);"><span>${esc(s.text)}</span></div>`;
+  }).join('');
+  const initialDeg=0;
+  return`
+    <div class="wheel-name">🎡 ${esc(wheel.name)}</div>
+    <div class="wheel-wrap">
+      <div class="wheel-pointer">▼</div>
+      <div class="wheel-disc" id="wheel-disc-el" style="background:conic-gradient(${gradientParts});transform:rotate(${initialDeg}deg);">
+        ${labels}
+        <div class="wheel-hub"></div>
+      </div>
+    </div>
+    <div id="wheel-ctrl" style="margin-bottom:10px;"></div>
+    ${wheel.spun?`<p style="text-align:center;font-size:13px;color:var(--muted2);margin-bottom:8px;">🎯 Résultat : <b style="color:${wheel.segments[wheel.resultIdx].type==='bonus'?'var(--g)':'var(--r)'};">${esc(wheel.segments[wheel.resultIdx].text)}</b></p>`:''}
+  `;
+}
+
+function nextAuction(){
+  if(!isHost)return;
+  hostHandleNext();
+}
+
+// ─── FINAL ───
+function showFinal(){
+  showScreen('scr-final');
+  const cols=O.players.length<=2?'1fr 1fr':O.players.length<=4?'1fr 1fr':'repeat(auto-fill,minmax(220px,1fr))';
+  document.getElementById('final-teams').style.gridTemplateColumns=cols;
+  document.getElementById('final-teams').innerHTML=O.players.map((p,i)=>`
+    <div class="final-team-card">
+      <div class="final-team-title" style="color:${['var(--o)','var(--p)','var(--c)','var(--g)','var(--r)','var(--y)'][i]||'var(--white)'};">🏟️ ${esc(p.name)}</div>
+      <div style="font-size:11px;color:var(--muted2);text-align:center;margin-bottom:8px;">Budget restant : ${O.budgets[i]}€</div>
+      <div class="final-char-list">
+        ${O.teams[i].map(c=>`<div class="final-char-item">
+          ${c.img?`<img class="final-char-img" src="${esc(c.img)}" onerror="this.style.display='none'" alt="">`:`<div class="final-char-emoji">${c.emoji}</div>`}
+          <div class="final-char-name">${esc(c.name)}</div>
+          <div class="final-char-price">${c.price>0?c.price+'€':'Gratuit'}</div>
+          ${c.bm?`<div style="width:100%;font-size:10px;color:${c.bm.type==='bonus'?'var(--g)':'var(--r)'};margin-top:2px;padding-left:34px;">${c.bm.type==='bonus'?'✨':'💀'} ${esc(c.bm.text)}${c.bm.money?` (${c.bm.money>0?'+':''}${c.bm.money}€)`:''}</div>`:''}
+        </div>`).join('')}
+        ${Array(TEAM_SIZE-O.teams[i].length).fill(0).map(()=>`<div class="final-char-item" style="opacity:.3;"><div class="final-char-emoji">❓</div><div class="final-char-name">Slot vide</div></div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function leaveGame(){window.location.href='nexus-games-hub.html';}
+
+// ─── CURSOR ───
+const cur=document.getElementById('cur'),ring=document.getElementById('cur-ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
+(function tick(){cur.style.transform=`translate3d(${mx}px,${my}px,0) translate(-50%,-50%)`;rx+=(mx-rx)*.18;ry+=(my-ry)*.18;ring.style.transform=`translate3d(${rx}px,${ry}px,0) translate(-50%,-50%)`;requestAnimationFrame(tick);})();
+document.addEventListener('mouseover',e=>{
+  if(e.target.closest('button,.mode-card,input')){cur.style.width='14px';cur.style.height='14px';ring.style.width='50px';ring.style.height='50px';}
+  else{cur.style.width='10px';cur.style.height='10px';ring.style.width='34px';ring.style.height='34px';}
+});
+</script>
+</body>
+</html>
